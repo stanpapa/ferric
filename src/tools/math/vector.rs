@@ -1,39 +1,37 @@
-use crate::tools::math::r#trait::MyTrait;
-use std::ops::{Index, IndexMut, Mul};
+use crate::tools::math::scalar::Scalar;
+use std::iter::FromIterator;
+use std::ops::{Index, IndexMut, Mul, MulAssign};
 
 pub type FVector = BaseVector<f64>;
 pub type IVector = BaseVector<i64>;
 
 #[derive(Clone, Default)]
-pub struct BaseVector<T>
-where
-    T: MyTrait,
-{
+pub struct BaseVector<T: Scalar> {
     n: usize,
     elem: Vec<T>,
 }
 
 // simple getter
-impl<T: MyTrait> BaseVector<T> {
+impl<T: Scalar> BaseVector<T> {
     pub fn size(&self) -> usize {
         self.n
     }
 }
 
-impl<T: MyTrait> BaseVector<T> {
-    pub fn new(n: &usize) -> Self {
-        if *n <= 0usize {
+impl<T: Scalar> BaseVector<T> {
+    pub fn new(n: usize) -> Self {
+        if n <= 0 {
             panic!("Cannot allocate BaseVector of n <= 0");
         }
 
         BaseVector::<T> {
-            n: *n,
-            elem: Vec::with_capacity(*n),
+            n,
+            elem: vec![T::default(); n],
         }
     }
 
-    pub fn init(&mut self, value: &T) {
-        self.elem = vec![value.clone(); self.n];
+    pub fn init(&mut self, value: T) {
+        self.elem = vec![value; self.n];
     }
 
     pub fn print(&self) {
@@ -43,7 +41,7 @@ impl<T: MyTrait> BaseVector<T> {
     }
 }
 
-impl<T: MyTrait> Index<usize> for BaseVector<T> {
+impl<T: Scalar> Index<usize> for BaseVector<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -51,32 +49,46 @@ impl<T: MyTrait> Index<usize> for BaseVector<T> {
     }
 }
 
-impl<T: MyTrait> IndexMut<usize> for BaseVector<T> {
+impl<T: Scalar> IndexMut<usize> for BaseVector<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.elem[index]
     }
 }
 
-// allows FVector * scalar
-impl Mul<f64> for FVector {
-    type Output = Self;
+// allows BaseVector * scalar
+impl<T: Scalar> Mul<T> for BaseVector<T>
+where
+    Vec<T>: FromIterator<<T as Mul>::Output>,
+{
+    type Output = BaseVector<T>;
 
-    fn mul(self, scalar: f64) -> Self::Output {
+    fn mul(self, scalar: T) -> Self::Output {
         Self {
-            n: self.n,
-            elem: self.elem.iter().map(|v| v * scalar).collect(),
+            elem: self.elem.into_iter().map(|v| v * scalar).collect(),
+            ..self
         }
     }
 }
 
-// allows scalar * FVector
-impl Mul<FVector> for f64 {
-    type Output = FVector;
+// allows scalar * BaseVector
+// todo: make it work with generics
+// impl<T: DataTrait> Mul<BaseVector<T>> for T {
+//     type Output = BaseVector<T>;
+//
+//     fn mul(self, rhs: BaseVector<T>) -> Self::Output {
+//         BaseVector::<T> {
+//             n: rhs.n,
+//             elem: rhs.elem.into_iter().map(|v| v * self).collect(),
+//         }
+//     }
+// }
 
-    fn mul(self, rhs: FVector) -> Self::Output {
-        FVector {
-            n: rhs.n,
-            elem: rhs.elem.iter().map(|v| v * self).collect(),
+// allows BaseMatrix *= scalar
+impl<T: Scalar> MulAssign<T> for BaseVector<T> {
+    fn mul_assign(&mut self, rhs: T) {
+        for x in &mut self.elem {
+            *x *= rhs;
         }
     }
 }
+// todo: add tests
