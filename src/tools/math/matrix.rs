@@ -1,17 +1,21 @@
-use std::fmt::Display;
+use crate::tools::math::r#trait::MyTrait;
 use std::ops::{Index, IndexMut};
 
 pub type FMatrix = BaseMatrix<f64>;
 pub type IMatrix = BaseMatrix<i64>;
 
-pub struct BaseMatrix<T> {
+#[derive(Clone, Default)]
+pub struct BaseMatrix<T>
+where
+    T: MyTrait,
+{
     rows: usize,
     cols: usize,
-    pub elem: Vec<T>,
+    elem: Vec<T>,
 }
 
 // simple getters
-impl <T> BaseMatrix<T> {
+impl<T: MyTrait> BaseMatrix<T> {
     pub fn rows(&self) -> usize {
         self.rows
     }
@@ -25,7 +29,7 @@ impl <T> BaseMatrix<T> {
     }
 }
 
-impl<T: Clone + Display> BaseMatrix<T> {
+impl<T: MyTrait> BaseMatrix<T> {
     pub fn new(rows: &usize, cols: &usize) -> BaseMatrix<T> {
         if rows <= &0usize || cols <= &0usize {
             panic!("Cannot allocate BaseMatrix of n <= 0");
@@ -52,7 +56,7 @@ impl<T: Clone + Display> BaseMatrix<T> {
     }
 }
 
-impl<T> Index<[usize; 2]> for BaseMatrix<T> {
+impl<T: MyTrait> Index<[usize; 2]> for BaseMatrix<T> {
     type Output = T;
 
     fn index(&self, index: [usize; 2]) -> &Self::Output {
@@ -60,7 +64,7 @@ impl<T> Index<[usize; 2]> for BaseMatrix<T> {
     }
 }
 
-impl<T> IndexMut<[usize; 2]> for BaseMatrix<T> {
+impl<T: MyTrait> IndexMut<[usize; 2]> for BaseMatrix<T> {
     fn index_mut(&mut self, index: [usize; 2]) -> &mut Self::Output {
         &mut self.elem[index[0] * self.rows + index[1]]
     }

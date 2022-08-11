@@ -1,22 +1,26 @@
-use std::fmt::Display;
+use crate::tools::math::r#trait::MyTrait;
 use std::ops::{Index, IndexMut, Mul};
 
 pub type FVector = BaseVector<f64>;
 pub type IVector = BaseVector<i64>;
 
-pub struct BaseVector<T> {
+#[derive(Clone, Default)]
+pub struct BaseVector<T>
+where
+    T: MyTrait,
+{
     n: usize,
     elem: Vec<T>,
 }
 
 // simple getter
-impl <T> BaseVector<T> {
+impl<T: MyTrait> BaseVector<T> {
     pub fn size(&self) -> usize {
         self.n
     }
 }
 
-impl<T: Clone + Display> BaseVector<T> {
+impl<T: MyTrait> BaseVector<T> {
     pub fn new(n: &usize) -> Self {
         if *n <= 0usize {
             panic!("Cannot allocate BaseVector of n <= 0");
@@ -39,7 +43,7 @@ impl<T: Clone + Display> BaseVector<T> {
     }
 }
 
-impl<T> Index<usize> for BaseVector<T> {
+impl<T: MyTrait> Index<usize> for BaseVector<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -47,7 +51,7 @@ impl<T> Index<usize> for BaseVector<T> {
     }
 }
 
-impl<T> IndexMut<usize> for BaseVector<T> {
+impl<T: MyTrait> IndexMut<usize> for BaseVector<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.elem[index]
     }
