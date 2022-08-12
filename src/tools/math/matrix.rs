@@ -77,7 +77,7 @@ impl<T: Scalar> BaseMatrix<T> {
     pub fn print(&self) {
         for i in 0..self.rows {
             for j in 0..self.cols {
-                print!("{} ", self[[i, j]]);
+                print!("{:12.8} ", self[[i, j]]);
             }
             println!()
         }
