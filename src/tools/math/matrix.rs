@@ -5,7 +5,7 @@ use std::ops::{Index, IndexMut, Mul, MulAssign};
 pub type FMatrix = BaseMatrix<f64>;
 pub type IMatrix = BaseMatrix<i64>;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct BaseMatrix<T: Scalar> {
     rows: usize,
     cols: usize,
@@ -47,6 +47,20 @@ impl<T: Scalar> BaseMatrix<T> {
             rows,
             cols,
             elem: vec![T::default(); rows * cols],
+        }
+    }
+
+    fn new_with_value(rows: usize, cols: usize, value: T) -> BaseMatrix<T> {
+        if rows <= 0 {
+            panic!("Cannot allocate BaseMatrix with rows <= 0");
+        } else if cols <= 0 {
+            panic!("Cannot allocate BaseMatrix with cols <= 0");
+        }
+
+        BaseMatrix::<T> {
+            rows,
+            cols,
+            elem: vec![value; rows * cols],
         }
     }
 
@@ -136,4 +150,99 @@ impl<T: Scalar> MulAssign<T> for BaseMatrix<T> {
     }
 }
 
-// todo: add tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new() {
+        let mat = FMatrix {
+            rows: 5,
+            cols: 5,
+            elem: vec![0.0; 25],
+        };
+
+        assert_eq!(mat, FMatrix::new(5, 5));
+    }
+
+    #[test]
+    fn new_with_value() {
+        let mat = FMatrix {
+            rows: 5,
+            cols: 5,
+            elem: vec![5.0; 25],
+        };
+
+        assert_eq!(mat, FMatrix::new_with_value(5, 5, 5.0));
+    }
+
+    #[test]
+    fn init() {
+        let mut mat = FMatrix::new(5, 5);
+        mat.init(5.0);
+
+        assert_eq!(mat, FMatrix::new_with_value(5, 5, 5.0));
+    }
+
+    #[test]
+    fn index() {
+        let mat = IMatrix {
+            rows: 5,
+            cols: 5,
+            elem: (0..25).collect(),
+        };
+
+        assert_eq!(mat[[3, 0]], 15);
+    }
+
+    #[test]
+    fn transpose() {
+        // square matrix
+        let mut mat = IMatrix {
+            rows: 3,
+            cols: 3,
+            elem: (0..9).collect(),
+        };
+        mat.transpose();
+
+        let mat_ref = IMatrix {
+            rows: 3,
+            cols: 3,
+            elem: vec![0, 3, 6, 1, 4, 7, 2, 5, 8],
+        };
+
+        assert_eq!(mat, mat_ref);
+
+        // non-square matrix
+        let mut mat = IMatrix {
+            rows: 4,
+            cols: 3,
+            elem: (0..12).collect(),
+        };
+        mat.transpose();
+
+        let mat_ref = IMatrix {
+            rows: 3,
+            cols: 4,
+            elem: vec![0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11],
+        };
+
+        assert_eq!(mat, mat_ref);
+    }
+
+    #[test]
+    fn matrix_scalar_mul() {
+        let mat = FMatrix::new_with_value(5, 5, 1.0);
+        let new_mat = mat * 2.0;
+
+        assert_eq!(new_mat, FMatrix::new_with_value(5, 5, 2.0));
+    }
+
+    #[test]
+    fn mul_assign() {
+        let mut mat = FMatrix::new_with_value(5, 5, 1.0);
+        mat *= 2.0;
+
+        assert_eq!(mat, FMatrix::new_with_value(5, 5, 2.0));
+    }
+}

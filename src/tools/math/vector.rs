@@ -5,7 +5,7 @@ use std::ops::{Index, IndexMut, Mul, MulAssign};
 pub type FVector = BaseVector<f64>;
 pub type IVector = BaseVector<i64>;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct BaseVector<T: Scalar> {
     n: usize,
     elem: Vec<T>,
@@ -27,6 +27,17 @@ impl<T: Scalar> BaseVector<T> {
         BaseVector::<T> {
             n,
             elem: vec![T::default(); n],
+        }
+    }
+
+    fn new_with_value(n: usize, value: T) -> Self {
+        if n <= 0 {
+            panic!("Cannot allocate BaseVector of n <= 0");
+        }
+
+        BaseVector::<T> {
+            n,
+            elem: vec![value; n],
         }
     }
 
@@ -91,4 +102,62 @@ impl<T: Scalar> MulAssign<T> for BaseVector<T> {
         }
     }
 }
-// todo: add tests
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new() {
+        let vec = FVector {
+            n: 5,
+            elem: vec![0.0; 5],
+        };
+
+        assert_eq!(vec, FVector::new(5));
+    }
+
+    #[test]
+    fn new_with_value() {
+        let vec = FVector {
+            n: 5,
+            elem: vec![5.0; 5],
+        };
+
+        assert_eq!(vec, FVector::new_with_value(5, 5.0));
+    }
+
+    #[test]
+    fn init() {
+        let mut vec = FVector::new(5);
+        vec.init(5.0);
+
+        assert_eq!(vec, FVector::new_with_value(5, 5.0));
+    }
+
+    #[test]
+    fn index() {
+        let vec = IVector {
+            n: 5,
+            elem: (0..5).collect(),
+        };
+
+        assert_eq!(vec[3], 3);
+    }
+
+    #[test]
+    fn vector_scalar_mul() {
+        let vec = FVector::new_with_value(5, 1.0);
+        let new_vec = vec * 2.0;
+
+        assert_eq!(new_vec, FVector::new_with_value(5, 2.0));
+    }
+
+    #[test]
+    fn mul_assign() {
+        let mut vec = FVector::new_with_value(5, 1.0);
+        vec *= 2.0;
+
+        assert_eq!(vec, FVector::new_with_value(5, 2.0));
+    }
+}
