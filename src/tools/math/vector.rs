@@ -238,18 +238,61 @@ where
     }
 }
 
-// BaseVector = &scalar * &BaseVector
 // todo: make it work with generics
-// impl<T: Scalar> Mul<&BaseVector<T>> for &T {
+// https://users.rust-lang.org/t/implementing-generic-trait-with-local-struct-on-local-trait/23225
+// BaseVector = scalar * BaseVector
+// impl<T: Scalar> Mul<BaseVector<T>> for T {
 //     type Output = BaseVector<T>;
 //
-//     fn mul(self, rhs: &BaseVector<T>) -> Self::Output {
+//     fn mul(self, rhs: BaseVector<T>) -> Self::Output {
 //         Self::Output {
-//             elem: rhs.elem.iter().map(|v| *v * *self).collect(),
-//             ..*rhs
+//             elem: rhs.elem.into_iter().map(|v| v * self).collect(),
+//             ..rhs
 //         }
 //     }
 // }
+
+// FVector = scalar * FVector
+impl Mul<FVector> for f64 {
+    type Output = FVector;
+
+    fn mul(self, rhs: FVector) -> Self::Output {
+        Self::mul(self, &rhs)
+    }
+}
+
+// FVector = scalar * &FVector
+impl Mul<&FVector> for f64 {
+    type Output = FVector;
+
+    fn mul(self, rhs: &FVector) -> Self::Output {
+        Self::Output {
+            elem: rhs.elem.iter().map(|v| v * self).collect(),
+            ..*rhs
+        }
+    }
+}
+
+// FVector = &scalar * FVector
+impl Mul<FVector> for &f64 {
+    type Output = FVector;
+
+    fn mul(self, rhs: FVector) -> Self::Output {
+        Self::mul(self, &rhs)
+    }
+}
+
+// FVector = &scalar * &FVector
+impl Mul<&FVector> for &f64 {
+    type Output = FVector;
+
+    fn mul(self, rhs: &FVector) -> Self::Output {
+        Self::Output {
+            elem: rhs.elem.iter().map(|v| v * self).collect(),
+            ..*rhs
+        }
+    }
+}
 
 // ---------------------------------------------------------------------
 // MulAssign
@@ -431,9 +474,16 @@ mod tests {
     #[test]
     fn mul_scalar() {
         let vec = FVector::new_with_value(N, 1.0);
+        assert_eq!(&2.0 * &vec, FVector::new_with_value(N, 2.0));
+        assert_eq!(2.0 * &vec, FVector::new_with_value(N, 2.0));
         assert_eq!(&vec * &2.0, FVector::new_with_value(N, 2.0));
-
         assert_eq!(&vec * 2.0, FVector::new_with_value(N, 2.0));
+
+        let vec = FVector::new_with_value(N, 1.0);
+        assert_eq!(&2.0 * vec, FVector::new_with_value(N, 2.0));
+
+        let vec = FVector::new_with_value(N, 1.0);
+        assert_eq!(2.0 * vec, FVector::new_with_value(N, 2.0));
 
         let vec = FVector::new_with_value(N, 1.0);
         assert_eq!(vec * &2.0, FVector::new_with_value(N, 2.0));

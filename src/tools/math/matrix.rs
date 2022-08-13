@@ -322,6 +322,62 @@ where
     }
 }
 
+// todo: make it work with generics
+// https://users.rust-lang.org/t/implementing-generic-trait-with-local-struct-on-local-trait/23225
+// BaseMatrix = scalar * BaseMatrix
+// impl<T: Scalar> Mul<BaseMatrix<T>> for T {
+//     type Output = BaseMatrix<T>;
+//
+//     fn mul(self, rhs: BaseMatrix<T>) -> Self::Output {
+//         Self::Output {
+//             elem: rhs.elem.into_iter().map(|v| v * self).collect(),
+//             ..rhs
+//         }
+//     }
+// }
+
+// FMatrix = scalar * FMatrix
+impl Mul<FMatrix> for f64 {
+    type Output = FMatrix;
+
+    fn mul(self, rhs: FMatrix) -> Self::Output {
+        Self::mul(self, &rhs)
+    }
+}
+
+// FMatrix = scalar * &FMatrix
+impl Mul<&FMatrix> for f64 {
+    type Output = FMatrix;
+
+    fn mul(self, rhs: &FMatrix) -> Self::Output {
+        Self::Output {
+            elem: rhs.elem.iter().map(|v| v * self).collect(),
+            ..*rhs
+        }
+    }
+}
+
+// FMatrix = &scalar * FMatrix
+impl Mul<FMatrix> for &f64 {
+    type Output = FMatrix;
+
+    fn mul(self, rhs: FMatrix) -> Self::Output {
+        Self::mul(self, &rhs)
+    }
+}
+
+// FMatrix = &scalar * &FMatrix
+impl Mul<&FMatrix> for &f64 {
+    type Output = FMatrix;
+
+    fn mul(self, rhs: &FMatrix) -> Self::Output {
+        Self::Output {
+            elem: rhs.elem.iter().map(|v| v * self).collect(),
+            ..*rhs
+        }
+    }
+}
+
 // ---------------------------------------------------------------------
 // MulAssign
 // ---------------------------------------------------------------------
@@ -550,9 +606,16 @@ mod tests {
     #[test]
     fn mul_scalar() {
         let mat = FMatrix::new_with_value(N, N, 1.0);
+        assert_eq!(&2.0 * &mat, FMatrix::new_with_value(N, N, 2.0));
+        assert_eq!(2.0 * &mat, FMatrix::new_with_value(N, N, 2.0));
         assert_eq!(&mat * &2.0, FMatrix::new_with_value(N, N, 2.0));
-
         assert_eq!(&mat * 2.0, FMatrix::new_with_value(N, N, 2.0));
+
+        let mat = FMatrix::new_with_value(N, N, 1.0);
+        assert_eq!(&2.0 * mat, FMatrix::new_with_value(N, N, 2.0));
+
+        let mat = FMatrix::new_with_value(N, N, 1.0);
+        assert_eq!(2.0 * mat, FMatrix::new_with_value(N, N, 2.0));
 
         let mat = FMatrix::new_with_value(N, N, 1.0);
         assert_eq!(mat * &2.0, FMatrix::new_with_value(N, N, 2.0));
