@@ -40,7 +40,7 @@ impl<T: Scalar> BaseMatrix<T> {
         self.rows * self.cols
     }
 
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.elem.len()
     }
 
@@ -54,6 +54,18 @@ impl<T: Scalar> BaseMatrix<T> {
 
     fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+}
+
+fn check<T: Scalar>(s: &str, lhs: &BaseMatrix<T>, rhs: &BaseMatrix<T>) {
+    if lhs.shape() != rhs.shape() {
+        panic!("[{}] Matrix dimensions are not the same.", s);
+    }
+
+    if !lhs.is_ok() {
+        panic!("[{}] lhs is not OK.", s);
+    } else if !rhs.is_ok() {
+        panic!("[{}] rhs is not OK.", s);
     }
 }
 
@@ -179,17 +191,10 @@ impl<T: Scalar + Add<Output = T>> Add<BaseMatrix<T>> for BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn add(self, rhs: BaseMatrix<T>) -> Self::Output {
-        if self.shape() != rhs.shape() {
-            panic!("[Add] Matrix dimensions are not the same.");
-        }
+        check("Add", &self, &rhs);
 
-        let mut mat = Self::Output::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                mat.elem.push(self[(i, j)] + rhs[(i, j)]);
-            }
-        }
+        let mut mat = self.clone();
+        mat += rhs;
 
         mat
     }
@@ -200,17 +205,10 @@ impl<T: Scalar + Add<Output = T>> Add<&BaseMatrix<T>> for BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn add(self, rhs: &BaseMatrix<T>) -> Self::Output {
-        if self.shape() != rhs.shape() {
-            panic!("[Add] Matrix dimensions are not the same.");
-        }
+        check("Add", &self, rhs);
 
-        let mut mat = Self::Output::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                mat.elem.push(self[(i, j)] + rhs[(i, j)]);
-            }
-        }
+        let mut mat = self.clone();
+        mat += rhs;
 
         mat
     }
@@ -221,17 +219,10 @@ impl<T: Scalar + Add<Output = T>> Add<BaseMatrix<T>> for &BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn add(self, rhs: BaseMatrix<T>) -> Self::Output {
-        if self.shape() != rhs.shape() {
-            panic!("[Add] Matrix dimensions are not the same.");
-        }
+        check("Add", self, &rhs);
 
-        let mut mat = Self::Output::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                mat.elem.push(self[(i, j)] + rhs[(i, j)]);
-            }
-        }
+        let mut mat = self.clone();
+        mat += rhs;
 
         mat
     }
@@ -242,17 +233,10 @@ impl<T: Scalar + Add<Output = T>> Add<&BaseMatrix<T>> for &BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn add(self, rhs: &BaseMatrix<T>) -> Self::Output {
-        if self.shape() != rhs.shape() {
-            panic!("[Add] Matrix dimensions are not the same.");
-        }
+        check("Add", self, rhs);
 
-        let mut mat = Self::Output::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                mat.elem.push(self[(i, j)] + rhs[(i, j)]);
-            }
-        }
+        let mut mat = self.clone();
+        mat += rhs;
 
         mat
     }
@@ -265,9 +249,7 @@ impl<T: Scalar + Add<Output = T>> Add<&BaseMatrix<T>> for &BaseMatrix<T> {
 // allows BaseMatrix += BaseMatrix
 impl<T: Scalar> AddAssign<BaseMatrix<T>> for BaseMatrix<T> {
     fn add_assign(&mut self, rhs: Self) {
-        if self.shape() != rhs.shape() {
-            panic!("[AddAssign] Matrix dimensions are not the same.");
-        }
+        check("AddAssign", self, &rhs);
 
         for i in 0..self.rows {
             for j in 0..self.cols {
@@ -280,9 +262,7 @@ impl<T: Scalar> AddAssign<BaseMatrix<T>> for BaseMatrix<T> {
 // allows BaseMatrix += &BaseMatrix
 impl<T: Scalar> AddAssign<&BaseMatrix<T>> for BaseMatrix<T> {
     fn add_assign(&mut self, rhs: &Self) {
-        if self.shape() != rhs.shape() {
-            panic!("[AddAssign] Matrix dimensions are not the same.");
-        }
+        check("AddAssign", self, rhs);
 
         for i in 0..self.rows {
             for j in 0..self.cols {
@@ -304,6 +284,10 @@ where
     type Output = BaseMatrix<T>;
 
     fn mul(self, rhs: T) -> Self::Output {
+        if self.is_empty() {
+            panic!("[Mul] Matrix is empty.");
+        }
+
         Self::Output {
             elem: self.elem.into_iter().map(|v| v * rhs).collect(),
             ..self
@@ -319,6 +303,10 @@ where
     type Output = BaseMatrix<T>;
 
     fn mul(self, rhs: &T) -> Self::Output {
+        if self.is_empty() {
+            panic!("[Mul] Matrix is empty.");
+        }
+
         Self::Output {
             elem: self.elem.into_iter().map(|v| v * *rhs).collect(),
             ..self
@@ -334,6 +322,10 @@ where
     type Output = BaseMatrix<T>;
 
     fn mul(self, rhs: T) -> Self::Output {
+        if self.is_empty() {
+            panic!("[Mul] Matrix is empty.");
+        }
+
         Self::Output {
             elem: self.elem.iter().map(|v| *v * rhs).collect(),
             ..*self
@@ -349,6 +341,10 @@ where
     type Output = BaseMatrix<T>;
 
     fn mul(self, rhs: &T) -> Self::Output {
+        if self.is_empty() {
+            panic!("[Mul] Matrix is empty.");
+        }
+
         Self::Output {
             elem: self.elem.iter().map(|v| *v * *rhs).collect(),
             ..*self
@@ -363,6 +359,10 @@ where
 // allows BaseMatrix *= scalar
 impl<T: Scalar> MulAssign<T> for BaseMatrix<T> {
     fn mul_assign(&mut self, rhs: T) {
+        if self.is_empty() {
+            panic!("[Mul] Matrix is empty.");
+        }
+
         for x in &mut self.elem {
             *x *= rhs;
         }
@@ -372,6 +372,10 @@ impl<T: Scalar> MulAssign<T> for BaseMatrix<T> {
 // allows BaseMatrix *= &scalar
 impl<T: Scalar> MulAssign<&T> for BaseMatrix<T> {
     fn mul_assign(&mut self, rhs: &T) {
+        if self.is_empty() {
+            panic!("[Mul] Matrix is empty.");
+        }
+
         for x in &mut self.elem {
             *x *= *rhs;
         }
@@ -387,17 +391,10 @@ impl<T: Scalar + Sub<Output = T>> Sub<BaseMatrix<T>> for BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn sub(self, rhs: BaseMatrix<T>) -> Self::Output {
-        if self.shape() != rhs.shape() {
-            panic!("[Sub] Matrix dimensions are not the same.");
-        }
+        check("Sub", &self, &rhs);
 
-        let mut mat = Self::Output::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                mat.elem.push(self[(i, j)] - rhs[(i, j)]);
-            }
-        }
+        let mut mat = self.clone();
+        mat -= rhs;
 
         mat
     }
@@ -408,17 +405,10 @@ impl<T: Scalar + Sub<Output = T>> Sub<&BaseMatrix<T>> for BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn sub(self, rhs: &BaseMatrix<T>) -> Self::Output {
-        if self.shape() != rhs.shape() {
-            panic!("[Sub] Matrix dimensions are not the same.");
-        }
+        check("Sub", &self, rhs);
 
-        let mut mat = Self::Output::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                mat.elem.push(self[(i, j)] - rhs[(i, j)]);
-            }
-        }
+        let mut mat = self.clone();
+        mat -= rhs;
 
         mat
     }
@@ -429,17 +419,10 @@ impl<T: Scalar + Sub<Output = T>> Sub<BaseMatrix<T>> for &BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn sub(self, rhs: BaseMatrix<T>) -> Self::Output {
-        if self.shape() != rhs.shape() {
-            panic!("[Sub] Matrix dimensions are not the same.");
-        }
+        check("Sub", self, &rhs);
 
-        let mut mat = Self::Output::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                mat.elem.push(self[(i, j)] - rhs[(i, j)]);
-            }
-        }
+        let mut mat = self.clone();
+        mat -= rhs;
 
         mat
     }
@@ -450,17 +433,10 @@ impl<T: Scalar + Sub<Output = T>> Sub<&BaseMatrix<T>> for &BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn sub(self, rhs: &BaseMatrix<T>) -> Self::Output {
-        if self.shape() != rhs.shape() {
-            panic!("[Sub] Matrix dimensions are not the same.");
-        }
+        check("Sub", self, rhs);
 
-        let mut mat = Self::Output::new(self.rows, self.cols);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                mat.elem.push(self[(i, j)] - rhs[(i, j)]);
-            }
-        }
+        let mut mat = self.clone();
+        mat -= rhs;
 
         mat
     }
@@ -473,9 +449,7 @@ impl<T: Scalar + Sub<Output = T>> Sub<&BaseMatrix<T>> for &BaseMatrix<T> {
 // allows BaseMatrix -= BaseMatrix
 impl<T: Scalar> SubAssign<BaseMatrix<T>> for BaseMatrix<T> {
     fn sub_assign(&mut self, rhs: BaseMatrix<T>) {
-        if self.shape() != rhs.shape() {
-            panic!("[SubAssign] Matrix dimensions are not the same.");
-        }
+        check("SubAssign", self, &rhs);
 
         for i in 0..self.rows {
             for j in 0..self.cols {
@@ -488,9 +462,7 @@ impl<T: Scalar> SubAssign<BaseMatrix<T>> for BaseMatrix<T> {
 // allows BaseMatrix -= &BaseMatrix
 impl<T: Scalar> SubAssign<&BaseMatrix<T>> for BaseMatrix<T> {
     fn sub_assign(&mut self, rhs: &Self) {
-        if self.shape() != rhs.shape() {
-            panic!("[SubAssign] Matrix dimensions are not the same.");
-        }
+        check("Sub", self, rhs);
 
         for i in 0..self.rows {
             for j in 0..self.cols {
