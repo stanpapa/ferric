@@ -1,2 +1,4 @@
-pub mod one;
-pub mod nuclear_repulsion;
+mod kinetic_energy;
+mod nuclear_attraction;
+mod nuclear_repulsion;
+mod overlap;

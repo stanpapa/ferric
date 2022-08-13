@@ -1,33 +1,29 @@
-use crate::tools::geometry::{distance, Atom};
+use crate::tools::geometry::{distance, Molecule};
 
-pub fn nuclear_repulsion(atoms: &Vec<Atom>) -> f64 {
-    let n = atoms.len();
+pub fn nuclear_repulsion(mol: &Molecule) -> f64 {
+    let n = mol.num_atoms();
+
     let mut vnn = 0.0;
     for i in 0..n {
         for j in 0..i {
-            vnn += atoms[i].charge() as f64 * atoms[j].charge() as f64
-                / distance(&atoms[i], &atoms[j]);
+            vnn += mol.atoms()[i].z() as f64 * mol.atoms()[j].z() as f64
+                / distance(&mol.atoms()[i], &mol.atoms()[j]);
         }
     }
+
     vnn
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tools::constants;
+    use crate::tools::constants::_ANG_AU;
 
     #[test]
     fn nuclear_repulsion() {
-        let o = Atom::new(8.0, 15.999, [0.0000000000, 0.0000000000, -0.1190150726]);
-        let h1 = Atom::new(1.0, 1.008, [0.7685504811, 0.0000000000, 0.4760602904]);
-        let h2 = Atom::new(1.0, 1.008, [-0.7685504811, 0.0000000000, 0.4760602904]);
+        let mut mol = Molecule::default();
+        mol.scale_coords(&_ANG_AU);
 
-        let mut atoms = vec![o, h1, h2];
-        for i in 0..atoms.len() {
-            atoms[i].scale_coords(&constants::_ANG_AU);
-        }
-
-        assert_eq!(super::nuclear_repulsion(&atoms), 9.055003146181436);
+        assert_eq!(super::nuclear_repulsion(&mol), 9.055003146181436);
     }
 }
