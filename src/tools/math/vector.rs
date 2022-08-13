@@ -21,11 +21,11 @@ impl<T: Scalar> BaseVector<T> {
         self.elem.len()
     }
 
-    fn is_ok(&self) -> bool {
+    pub fn is_ok(&self) -> bool {
         self.size() == self.len()
     }
 
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 }
@@ -117,12 +117,7 @@ impl<T: Scalar + Add<Output = T>> Add<BaseVector<T>> for BaseVector<T> {
     type Output = BaseVector<T>;
 
     fn add(self, rhs: BaseVector<T>) -> Self::Output {
-        check("Add", &self, &rhs);
-
-        let mut vec = self.clone();
-        vec += rhs;
-
-        vec
+        Self::add(self, &rhs)
     }
 }
 
@@ -145,12 +140,7 @@ impl<T: Scalar + Add<Output = T>> Add<BaseVector<T>> for &BaseVector<T> {
     type Output = BaseVector<T>;
 
     fn add(self, rhs: BaseVector<T>) -> Self::Output {
-        check("Add", self, &rhs);
-
-        let mut vec = self.clone();
-        vec += rhs;
-
-        vec
+        Self::add(self, &rhs)
     }
 }
 
@@ -175,11 +165,7 @@ impl<T: Scalar + Add<Output = T>> Add<&BaseVector<T>> for &BaseVector<T> {
 // allows BaseVector += BaseVector
 impl<T: Scalar> AddAssign<BaseVector<T>> for BaseVector<T> {
     fn add_assign(&mut self, rhs: Self) {
-        check("AddAssign", self, &rhs);
-
-        for i in 0..self.n {
-            self[i] += rhs[i];
-        }
+        Self::add_assign(self, &rhs)
     }
 }
 
@@ -205,11 +191,8 @@ where
 {
     type Output = BaseVector<T>;
 
-    fn mul(self, scalar: T) -> Self::Output {
-        Self::Output {
-            elem: self.elem.into_iter().map(|v| v * scalar).collect(),
-            ..self
-        }
+    fn mul(self, rhs: T) -> Self::Output {
+        Self::mul(self, &rhs)
     }
 }
 
@@ -220,9 +203,9 @@ where
 {
     type Output = BaseVector<T>;
 
-    fn mul(self, scalar: &T) -> Self::Output {
+    fn mul(self, rhs: &T) -> Self::Output {
         Self::Output {
-            elem: self.elem.into_iter().map(|v| v * *scalar).collect(),
+            elem: self.elem.into_iter().map(|v| v * *rhs).collect(),
             ..self
         }
     }
@@ -235,11 +218,8 @@ where
 {
     type Output = BaseVector<T>;
 
-    fn mul(self, scalar: T) -> Self::Output {
-        Self::Output {
-            elem: self.elem.iter().map(|v| *v * scalar).collect(),
-            ..*self
-        }
+    fn mul(self, rhs: T) -> Self::Output {
+        Self::mul(self, &rhs)
     }
 }
 
@@ -250,9 +230,9 @@ where
 {
     type Output = BaseVector<T>;
 
-    fn mul(self, scalar: &T) -> Self::Output {
+    fn mul(self, rhs: &T) -> Self::Output {
         Self::Output {
-            elem: self.elem.iter().map(|v| *v * *scalar).collect(),
+            elem: self.elem.iter().map(|v| *v * *rhs).collect(),
             ..*self
         }
     }
@@ -278,9 +258,7 @@ where
 // BaseVector *= scalar
 impl<T: Scalar> MulAssign<T> for BaseVector<T> {
     fn mul_assign(&mut self, rhs: T) {
-        for x in &mut self.elem {
-            *x *= rhs;
-        }
+        Self::mul_assign(self, &rhs)
     }
 }
 
@@ -302,12 +280,7 @@ impl<T: Scalar + Sub<Output = T>> Sub<BaseVector<T>> for BaseVector<T> {
     type Output = BaseVector<T>;
 
     fn sub(self, rhs: BaseVector<T>) -> Self::Output {
-        check("Sub", &self, &rhs);
-
-        let mut vec = self.clone();
-        vec -= rhs;
-
-        vec
+        Self::sub(self, &rhs)
     }
 }
 
@@ -330,12 +303,7 @@ impl<T: Scalar + Sub<Output = T>> Sub<BaseVector<T>> for &BaseVector<T> {
     type Output = BaseVector<T>;
 
     fn sub(self, rhs: BaseVector<T>) -> Self::Output {
-        check("Sub", self, &rhs);
-
-        let mut vec = self.clone();
-        vec -= rhs;
-
-        vec
+        Self::sub(self, &rhs)
     }
 }
 
@@ -360,11 +328,7 @@ impl<T: Scalar + Sub<Output = T>> Sub<&BaseVector<T>> for &BaseVector<T> {
 // allows BaseVector -= BaseVector
 impl<T: Scalar> SubAssign<BaseVector<T>> for BaseVector<T> {
     fn sub_assign(&mut self, rhs: BaseVector<T>) {
-        check("SubAssign", self, &rhs);
-
-        for i in 0..self.n {
-            self[i] -= rhs[i];
-        }
+        Self::sub_assign(self, &rhs);
     }
 }
 

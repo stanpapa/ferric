@@ -48,11 +48,11 @@ impl<T: Scalar> BaseMatrix<T> {
         (self.rows, self.cols)
     }
 
-    fn is_ok(&self) -> bool {
+    pub fn is_ok(&self) -> bool {
         self.size() == self.len()
     }
 
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 }
@@ -191,12 +191,7 @@ impl<T: Scalar + Add<Output = T>> Add<BaseMatrix<T>> for BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn add(self, rhs: BaseMatrix<T>) -> Self::Output {
-        check("Add", &self, &rhs);
-
-        let mut mat = self.clone();
-        mat += rhs;
-
-        mat
+        Self::add(self, &rhs)
     }
 }
 
@@ -219,12 +214,7 @@ impl<T: Scalar + Add<Output = T>> Add<BaseMatrix<T>> for &BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn add(self, rhs: BaseMatrix<T>) -> Self::Output {
-        check("Add", self, &rhs);
-
-        let mut mat = self.clone();
-        mat += rhs;
-
-        mat
+        Self::add(self, &rhs)
     }
 }
 
@@ -249,13 +239,7 @@ impl<T: Scalar + Add<Output = T>> Add<&BaseMatrix<T>> for &BaseMatrix<T> {
 // allows BaseMatrix += BaseMatrix
 impl<T: Scalar> AddAssign<BaseMatrix<T>> for BaseMatrix<T> {
     fn add_assign(&mut self, rhs: Self) {
-        check("AddAssign", self, &rhs);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                self[(i, j)] += rhs[(i, j)];
-            }
-        }
+        Self::add_assign(self, &rhs)
     }
 }
 
@@ -284,14 +268,7 @@ where
     type Output = BaseMatrix<T>;
 
     fn mul(self, rhs: T) -> Self::Output {
-        if self.is_empty() {
-            panic!("[Mul] Matrix is empty.");
-        }
-
-        Self::Output {
-            elem: self.elem.into_iter().map(|v| v * rhs).collect(),
-            ..self
-        }
+        Self::mul(self, &rhs)
     }
 }
 
@@ -322,14 +299,7 @@ where
     type Output = BaseMatrix<T>;
 
     fn mul(self, rhs: T) -> Self::Output {
-        if self.is_empty() {
-            panic!("[Mul] Matrix is empty.");
-        }
-
-        Self::Output {
-            elem: self.elem.iter().map(|v| *v * rhs).collect(),
-            ..*self
-        }
+        Self::mul(self, &rhs)
     }
 }
 
@@ -359,13 +329,7 @@ where
 // allows BaseMatrix *= scalar
 impl<T: Scalar> MulAssign<T> for BaseMatrix<T> {
     fn mul_assign(&mut self, rhs: T) {
-        if self.is_empty() {
-            panic!("[Mul] Matrix is empty.");
-        }
-
-        for x in &mut self.elem {
-            *x *= rhs;
-        }
+        Self::mul_assign(self, &rhs)
     }
 }
 
@@ -391,12 +355,7 @@ impl<T: Scalar + Sub<Output = T>> Sub<BaseMatrix<T>> for BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn sub(self, rhs: BaseMatrix<T>) -> Self::Output {
-        check("Sub", &self, &rhs);
-
-        let mut mat = self.clone();
-        mat -= rhs;
-
-        mat
+        Self::sub(self, &rhs)
     }
 }
 
@@ -419,12 +378,7 @@ impl<T: Scalar + Sub<Output = T>> Sub<BaseMatrix<T>> for &BaseMatrix<T> {
     type Output = BaseMatrix<T>;
 
     fn sub(self, rhs: BaseMatrix<T>) -> Self::Output {
-        check("Sub", self, &rhs);
-
-        let mut mat = self.clone();
-        mat -= rhs;
-
-        mat
+        Self::sub(self, &rhs)
     }
 }
 
@@ -449,13 +403,7 @@ impl<T: Scalar + Sub<Output = T>> Sub<&BaseMatrix<T>> for &BaseMatrix<T> {
 // allows BaseMatrix -= BaseMatrix
 impl<T: Scalar> SubAssign<BaseMatrix<T>> for BaseMatrix<T> {
     fn sub_assign(&mut self, rhs: BaseMatrix<T>) {
-        check("SubAssign", self, &rhs);
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                self[(i, j)] -= rhs[(i, j)];
-            }
-        }
+        Self::sub_assign(self, &rhs)
     }
 }
 
