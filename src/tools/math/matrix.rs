@@ -84,7 +84,7 @@ impl<T: Scalar> BaseMatrix<T> {
         }
     }
 
-    fn new_with_value(rows: usize, cols: usize, value: T) -> BaseMatrix<T> {
+    pub fn new_with_value(rows: usize, cols: usize, value: T) -> BaseMatrix<T> {
         if rows <= 0 {
             panic!("Cannot allocate BaseMatrix with rows <= 0");
         } else if cols <= 0 {

@@ -54,7 +54,7 @@ impl<T: Scalar> BaseVector<T> {
         }
     }
 
-    fn new_with_value(n: usize, value: T) -> Self {
+    pub fn new_with_value(n: usize, value: T) -> Self {
         if n <= 0 {
             panic!("Cannot allocate BaseVector of n <= 0");
         }
@@ -238,15 +238,15 @@ where
     }
 }
 
-// BaseVector = scalar * BaseVector
+// BaseVector = &scalar * &BaseVector
 // todo: make it work with generics
-// impl<T: Scalar> Mul<BaseVector<T>> for T {
+// impl<T: Scalar> Mul<&BaseVector<T>> for &T {
 //     type Output = BaseVector<T>;
 //
-//     fn mul(self, rhs: BaseVector<T>) -> Self::Output {
+//     fn mul(self, rhs: &BaseVector<T>) -> Self::Output {
 //         Self::Output {
-//             n: rhs.n,
-//             elem: rhs.elem.into_iter().map(|v| v * self).collect(),
+//             elem: rhs.elem.iter().map(|v| *v * *self).collect(),
+//             ..*rhs
 //         }
 //     }
 // }
