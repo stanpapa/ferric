@@ -1,19 +1,17 @@
-use crate::math::matrix::Matrix;
 use crate::math::scalar::Scalar;
-use std::iter::FromIterator;
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Deref, DerefMut, Index, IndexMut};
 
-pub type FVector = BaseVector<f64>;
-pub type IVector = BaseVector<i64>;
+pub type FVector = Vector<f64>;
+pub type IVector = Vector<i64>;
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BaseVector<T: Scalar> {
+pub struct Vector<T: Scalar> {
     n: usize,
     elem: Vec<T>,
 }
 
 // simple getter
-impl<T: Scalar> BaseVector<T> {
+impl<T: Scalar> Vector<T> {
     pub fn size(&self) -> usize {
         self.n
     }
@@ -31,25 +29,13 @@ impl<T: Scalar> BaseVector<T> {
     }
 }
 
-fn check<T: Scalar>(s: &str, lhs: &BaseVector<T>, rhs: &BaseVector<T>) {
-    if lhs.size() != rhs.size() {
-        panic!("[{}] Vector dimensions are not the same.", s);
-    }
-
-    if !lhs.is_ok() {
-        panic!("[{}] lhs is not OK.", s);
-    } else if !rhs.is_ok() {
-        panic!("[{}] rhs is not OK.", s);
-    }
-}
-
-impl<T: Scalar> BaseVector<T> {
+impl<T: Scalar> Vector<T> {
     pub fn new(n: usize) -> Self {
         if n <= 0 {
             panic!("Cannot allocate BaseVector of n <= 0");
         }
 
-        BaseVector::<T> {
+        Vector::<T> {
             n,
             elem: Vec::with_capacity(n),
         }
@@ -60,9 +46,16 @@ impl<T: Scalar> BaseVector<T> {
             panic!("Cannot allocate BaseVector of n <= 0");
         }
 
-        BaseVector::<T> {
+        Vector::<T> {
             n,
             elem: vec![value; n],
+        }
+    }
+
+    pub fn new_from_vec(v: &[T]) -> Self {
+        Self {
+            n: v.len(),
+            elem: v.to_vec(),
         }
     }
 
@@ -74,10 +67,10 @@ impl<T: Scalar> BaseVector<T> {
         self.elem = vec![value; self.n];
     }
 
-    fn del(&mut self) {
-        self.n = 0;
-        self.elem.clear();
-    }
+    // fn del(&mut self) {
+    //     self.n = 0;
+    //     self.elem.clear();
+    // }
 
     pub fn print(&self) {
         if self.is_empty() {
@@ -91,11 +84,28 @@ impl<T: Scalar> BaseVector<T> {
     }
 }
 
+// WARNING: Do not change len of elem. That will break Vector
+// implement `Deref` so, Vector<T>.iter() can be called
+impl<T: Scalar> Deref for Vector<T> {
+    type Target = Vec<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.elem
+    }
+}
+
+// implement `DerefMut` so, Vector<T>.iter_mut() can be called
+impl<T: Scalar> DerefMut for Vector<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.elem
+    }
+}
+
 // ---------------------------------------------------------------------
 // Index
 // ---------------------------------------------------------------------
 
-impl<T: Scalar> Index<usize> for BaseVector<T> {
+impl<T: Scalar> Index<usize> for Vector<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -103,287 +113,9 @@ impl<T: Scalar> Index<usize> for BaseVector<T> {
     }
 }
 
-impl<T: Scalar> IndexMut<usize> for BaseVector<T> {
+impl<T: Scalar> IndexMut<usize> for Vector<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.elem[index]
-    }
-}
-
-// ---------------------------------------------------------------------
-// Add
-// ---------------------------------------------------------------------
-
-// BaseVector<T> = BaseVector<T> + BaseVector<T>
-impl<T: Scalar + Add<Output = T>> Add<BaseVector<T>> for BaseVector<T> {
-    type Output = BaseVector<T>;
-
-    fn add(self, rhs: BaseVector<T>) -> Self::Output {
-        Self::add(self, &rhs)
-    }
-}
-
-// BaseVector<T> = BaseVector<T> + &BaseVector<T>
-impl<T: Scalar + Add<Output = T>> Add<&BaseVector<T>> for BaseVector<T> {
-    type Output = BaseVector<T>;
-
-    fn add(self, rhs: &BaseVector<T>) -> Self::Output {
-        check("Add", &self, rhs);
-
-        let mut vec = self.clone();
-        vec += rhs;
-
-        vec
-    }
-}
-
-// BaseVector<T> = &BaseVector<T> + BaseVector<T>
-impl<T: Scalar + Add<Output = T>> Add<BaseVector<T>> for &BaseVector<T> {
-    type Output = BaseVector<T>;
-
-    fn add(self, rhs: BaseVector<T>) -> Self::Output {
-        Self::add(self, &rhs)
-    }
-}
-
-// BaseVector<T> = &BaseVector<T> + &BaseVector<T>
-impl<T: Scalar + Add<Output = T>> Add<&BaseVector<T>> for &BaseVector<T> {
-    type Output = BaseVector<T>;
-
-    fn add(self, rhs: &BaseVector<T>) -> Self::Output {
-        check("Add", self, rhs);
-
-        let mut vec = self.clone();
-        vec += rhs;
-
-        vec
-    }
-}
-
-// ---------------------------------------------------------------------
-// AddAssign
-// ---------------------------------------------------------------------
-
-// allows BaseVector += BaseVector
-impl<T: Scalar> AddAssign<BaseVector<T>> for BaseVector<T> {
-    fn add_assign(&mut self, rhs: Self) {
-        Self::add_assign(self, &rhs)
-    }
-}
-
-// allows BaseVector += &BaseVector
-impl<T: Scalar> AddAssign<&BaseVector<T>> for BaseVector<T> {
-    fn add_assign(&mut self, rhs: &Self) {
-        check("AddAssign", self, rhs);
-
-        for i in 0..self.n {
-            self[i] += rhs[i];
-        }
-    }
-}
-
-// ---------------------------------------------------------------------
-// Mul
-// ---------------------------------------------------------------------
-
-// BaseVector = BaseVector * scalar
-impl<T: Scalar> Mul<T> for BaseVector<T>
-where
-    Vec<T>: FromIterator<<T as Mul>::Output>,
-{
-    type Output = BaseVector<T>;
-
-    fn mul(self, rhs: T) -> Self::Output {
-        Self::mul(self, &rhs)
-    }
-}
-
-// BaseVector = BaseVector * &scalar
-impl<T: Scalar> Mul<&T> for BaseVector<T>
-where
-    Vec<T>: FromIterator<<T as Mul>::Output>,
-{
-    type Output = BaseVector<T>;
-
-    fn mul(self, rhs: &T) -> Self::Output {
-        Self::Output {
-            elem: self.elem.into_iter().map(|v| v * *rhs).collect(),
-            ..self
-        }
-    }
-}
-
-// BaseVector = &BaseVector * scalar
-impl<T: Scalar> Mul<T> for &BaseVector<T>
-where
-    Vec<T>: FromIterator<<T as Mul>::Output>,
-{
-    type Output = BaseVector<T>;
-
-    fn mul(self, rhs: T) -> Self::Output {
-        Self::mul(self, &rhs)
-    }
-}
-
-// BaseVector = &BaseVector * &scalar
-impl<T: Scalar> Mul<&T> for &BaseVector<T>
-where
-    Vec<T>: FromIterator<<T as Mul>::Output>,
-{
-    type Output = BaseVector<T>;
-
-    fn mul(self, rhs: &T) -> Self::Output {
-        Self::Output {
-            elem: self.elem.iter().map(|v| *v * *rhs).collect(),
-            ..*self
-        }
-    }
-}
-
-// todo: make it work with generics
-// https://users.rust-lang.org/t/implementing-generic-trait-with-local-struct-on-local-trait/23225
-// BaseVector = scalar * BaseVector
-// impl<T: Scalar> Mul<BaseVector<T>> for T {
-//     type Output = BaseVector<T>;
-//
-//     fn mul(self, rhs: BaseVector<T>) -> Self::Output {
-//         Self::Output {
-//             elem: rhs.elem.into_iter().map(|v| v * self).collect(),
-//             ..rhs
-//         }
-//     }
-// }
-
-// FVector = scalar * FVector
-impl Mul<FVector> for f64 {
-    type Output = FVector;
-
-    fn mul(self, rhs: FVector) -> Self::Output {
-        Self::mul(self, &rhs)
-    }
-}
-
-// FVector = scalar * &FVector
-impl Mul<&FVector> for f64 {
-    type Output = FVector;
-
-    fn mul(self, rhs: &FVector) -> Self::Output {
-        Self::Output {
-            elem: rhs.elem.iter().map(|v| v * self).collect(),
-            ..*rhs
-        }
-    }
-}
-
-// FVector = &scalar * FVector
-impl Mul<FVector> for &f64 {
-    type Output = FVector;
-
-    fn mul(self, rhs: FVector) -> Self::Output {
-        Self::mul(self, &rhs)
-    }
-}
-
-// FVector = &scalar * &FVector
-impl Mul<&FVector> for &f64 {
-    type Output = FVector;
-
-    fn mul(self, rhs: &FVector) -> Self::Output {
-        Self::Output {
-            elem: rhs.elem.iter().map(|v| v * self).collect(),
-            ..*rhs
-        }
-    }
-}
-
-// ---------------------------------------------------------------------
-// MulAssign
-// ---------------------------------------------------------------------
-
-// BaseVector *= scalar
-impl<T: Scalar> MulAssign<T> for BaseVector<T> {
-    fn mul_assign(&mut self, rhs: T) {
-        Self::mul_assign(self, &rhs)
-    }
-}
-
-// BaseVector *= &scalar
-impl<T: Scalar> MulAssign<&T> for BaseVector<T> {
-    fn mul_assign(&mut self, rhs: &T) {
-        for x in &mut self.elem {
-            *x *= *rhs;
-        }
-    }
-}
-
-// ---------------------------------------------------------------------
-// Sub
-// ---------------------------------------------------------------------
-
-// BaseVector<T> = BaseVector<T> - BaseVector<T>
-impl<T: Scalar + Sub<Output = T>> Sub<BaseVector<T>> for BaseVector<T> {
-    type Output = BaseVector<T>;
-
-    fn sub(self, rhs: BaseVector<T>) -> Self::Output {
-        Self::sub(self, &rhs)
-    }
-}
-
-// BaseVector<T> = BaseVector<T> - &BaseVector<T>
-impl<T: Scalar + Sub<Output = T>> Sub<&BaseVector<T>> for BaseVector<T> {
-    type Output = BaseVector<T>;
-
-    fn sub(self, rhs: &BaseVector<T>) -> Self::Output {
-        check("Sub", &self, rhs);
-
-        let mut vec = self.clone();
-        vec -= rhs;
-
-        vec
-    }
-}
-
-// BaseVector<T> = &BaseVector<T> - BaseVector<T>
-impl<T: Scalar + Sub<Output = T>> Sub<BaseVector<T>> for &BaseVector<T> {
-    type Output = BaseVector<T>;
-
-    fn sub(self, rhs: BaseVector<T>) -> Self::Output {
-        Self::sub(self, &rhs)
-    }
-}
-
-// BaseVector<T> = &BaseVector<T> - &BaseVector<T>
-impl<T: Scalar + Sub<Output = T>> Sub<&BaseVector<T>> for &BaseVector<T> {
-    type Output = BaseVector<T>;
-
-    fn sub(self, rhs: &BaseVector<T>) -> Self::Output {
-        check("Sub", self, rhs);
-
-        let mut vec = self.clone();
-        vec -= rhs;
-
-        vec
-    }
-}
-
-// ---------------------------------------------------------------------
-// SubAssign
-// ---------------------------------------------------------------------
-
-// allows BaseVector -= BaseVector
-impl<T: Scalar> SubAssign<BaseVector<T>> for BaseVector<T> {
-    fn sub_assign(&mut self, rhs: BaseVector<T>) {
-        Self::sub_assign(self, &rhs);
-    }
-}
-
-// allows BaseVector -= &BaseVector
-impl<T: Scalar> SubAssign<&BaseVector<T>> for BaseVector<T> {
-    fn sub_assign(&mut self, rhs: &Self) {
-        check("Sub", self, rhs);
-
-        for i in 0..self.n {
-            self[i] -= rhs[i];
-        }
     }
 }
 
@@ -414,6 +146,16 @@ mod tests {
     }
 
     #[test]
+    fn new_from_vec() {
+        let vec = IVector {
+            n: N,
+            elem: vec![0, 1, 2, 3, 4],
+        };
+
+        assert_eq!(vec, IVector::new_from_vec(&[0, 1, 2, 3, 4]));
+    }
+
+    #[test]
     fn zero() {
         let vec = FVector {
             n: N,
@@ -439,99 +181,5 @@ mod tests {
         };
 
         assert_eq!(vec[3], 3);
-    }
-
-    #[test]
-    fn add() {
-        let c = FVector::new_with_value(N, 3.0);
-
-        let a = FVector::new_with_value(N, 1.0);
-        let b = FVector::new_with_value(N, 2.0);
-        assert_eq!(&a + &b, c);
-        assert_eq!(a + &b, c);
-
-        let a = FVector::new_with_value(N, 1.0);
-        assert_eq!(&a + b, c);
-
-        let a = FVector::new_with_value(N, 1.0);
-        let b = FVector::new_with_value(N, 2.0);
-        assert_eq!(a + b, c);
-    }
-
-    #[test]
-    fn add_assign() {
-        let c = FVector::new_with_value(N, 3.0);
-
-        let a = FVector::new_with_value(N, 1.0);
-        let mut b = FVector::new_with_value(N, 2.0);
-        b += &a;
-        assert_eq!(b, c);
-
-        let mut b = FVector::new_with_value(N, 2.0);
-        b += a;
-        assert_eq!(b, c);
-    }
-
-    #[test]
-    fn mul_scalar() {
-        let vec = FVector::new_with_value(N, 1.0);
-        assert_eq!(&2.0 * &vec, FVector::new_with_value(N, 2.0));
-        assert_eq!(2.0 * &vec, FVector::new_with_value(N, 2.0));
-        assert_eq!(&vec * &2.0, FVector::new_with_value(N, 2.0));
-        assert_eq!(&vec * 2.0, FVector::new_with_value(N, 2.0));
-
-        let vec = FVector::new_with_value(N, 1.0);
-        assert_eq!(&2.0 * vec, FVector::new_with_value(N, 2.0));
-
-        let vec = FVector::new_with_value(N, 1.0);
-        assert_eq!(2.0 * vec, FVector::new_with_value(N, 2.0));
-
-        let vec = FVector::new_with_value(N, 1.0);
-        assert_eq!(vec * &2.0, FVector::new_with_value(N, 2.0));
-
-        let vec = FVector::new_with_value(N, 1.0);
-        assert_eq!(vec * 2.0, FVector::new_with_value(N, 2.0));
-    }
-
-    #[test]
-    fn mul_assign_scalar() {
-        let mut vec = FVector::new_with_value(N, 1.0);
-
-        vec *= 2.0;
-        assert_eq!(vec, FVector::new_with_value(N, 2.0));
-
-        vec *= &2.0;
-        assert_eq!(vec, FVector::new_with_value(N, 4.0));
-    }
-
-    #[test]
-    fn sub() {
-        let c = FVector::new_with_value(N, 1.0);
-
-        let a = FVector::new_with_value(N, 3.0);
-        let b = FVector::new_with_value(N, 2.0);
-        assert_eq!(&a - &b, c);
-        assert_eq!(a - &b, c);
-
-        let a = FVector::new_with_value(N, 3.0);
-        assert_eq!(&a - b, c);
-
-        let a = FVector::new_with_value(N, 3.0);
-        let b = FVector::new_with_value(N, 2.0);
-        assert_eq!(a - b, c);
-    }
-
-    #[test]
-    fn sub_assign() {
-        let c = FVector::new_with_value(N, 1.0);
-
-        let a = FVector::new_with_value(N, 2.0);
-        let mut b = FVector::new_with_value(N, 3.0);
-        b -= &a;
-        assert_eq!(b, c);
-
-        let mut b = FVector::new_with_value(N, 3.0);
-        b -= a;
-        assert_eq!(b, c);
     }
 }

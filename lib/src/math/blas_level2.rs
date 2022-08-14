@@ -1,5 +1,5 @@
-use super::{matrix::Matrix, vector::BaseVector};
 use crate::math::scalar::Scalar;
+use crate::math::{matrix::Matrix, vector::Vector};
 use std::ops::Mul;
 
 // ---------------------------------------------------------------------
@@ -12,7 +12,7 @@ use std::ops::Mul;
 
 // mat_scal
 
-fn check_mat_vec<T: Scalar>(s: &str, lhs: &Matrix<T>, rhs: &BaseVector<T>) {
+fn check_mat_vec<T: Scalar>(s: &str, lhs: &Matrix<T>, rhs: &Vector<T>) {
     if lhs.cols() != rhs.size() {
         panic!("[{}] Incompatible dimensions.", s);
     }
@@ -24,16 +24,16 @@ fn check_mat_vec<T: Scalar>(s: &str, lhs: &Matrix<T>, rhs: &BaseVector<T>) {
     }
 }
 
-// BaseVector = &Matrix * &BaseVector -> C(i) = A(i,j) B(j)
+// Vector = &Matrix * &Vector -> C(i) = A(i,j) B(j)
 macro_rules! mul_matrix_vec {
     ($($t:ty),*) => {$(
-impl Mul<&BaseVector<$t>> for &Matrix<$t> {
-    type Output = BaseVector<$t>;
+impl Mul<&Vector<$t>> for &Matrix<$t> {
+    type Output = Vector<$t>;
 
-    fn mul(self, rhs: &BaseVector<$t>) -> Self::Output {
+    fn mul(self, rhs: &Vector<$t>) -> Self::Output {
         check_mat_vec("Mul", self, rhs);
 
-        let mut vec = BaseVector::<$t>::zero(self.rows());
+        let mut vec = Vector::<$t>::zero(self.rows());
 
         for i in 0..self.rows() {
             for j in 0..self.cols() {

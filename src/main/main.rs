@@ -1,5 +1,9 @@
+use ferric_lib::gto_bases;
+
 fn main() {
     print_banner();
+
+    gto_bases::def2_tzvp::load_def2_tzvp();
 }
 
 fn print_banner() {

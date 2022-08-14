@@ -1,6 +1,6 @@
 // mod dimension;
-mod blas_level1;
-mod blas_level2;
+pub mod blas_level1;
+pub mod blas_level2;
 pub mod blas_level3;
 pub mod functions;
 pub mod matrix;

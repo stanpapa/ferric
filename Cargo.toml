@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["Stan Papadopoulos <stan.papadopoulos@gmail.com>"]
 edition = "2018"
 
-[workspace]
+[[bin]]
+name = "ferric"
+path = "src/main/main.rs"
 
 [[bin]]
 name = "ferric-scf"

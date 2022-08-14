@@ -1,9 +1,16 @@
 This is a quantum chemistry program written in Rust for fun and educational purposes
 
 Features:
-- Absolutely none
+- [x] Absolutely none
 
 
 How to build:
-`cargo build`
-The executable can be found inside the `target` directory.
+
+    `cargo build`
+
+This will first build the library, followed by the binaries. If you want to run the program you could call
+
+    `cargo run`
+
+which will compile the program (if neccesary) and call the main executable.
+
