@@ -1,5 +1,8 @@
+// mod dimension;
+mod blas_level1;
+mod blas_level2;
+pub mod blas_level3;
 pub mod functions;
-pub mod linear_algebra;
 pub mod matrix;
 pub mod matrix_container;
 mod scalar;

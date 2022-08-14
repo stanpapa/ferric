@@ -1,5 +1,5 @@
-use crate::tools::elements::Element;
-use crate::tools::elements::Element::{H, O};
+use crate::elements::Element;
+use crate::elements::Element::{H, O};
 
 pub struct Molecule {
     atoms: Vec<Atom>,

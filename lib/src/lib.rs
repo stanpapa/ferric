@@ -5,3 +5,4 @@ pub mod geometry;
 pub mod gto_bases;
 pub mod gto_integrals;
 pub mod math;
+pub mod orbitals;

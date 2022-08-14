@@ -1,4 +1,5 @@
-use crate::tools::math::scalar::Scalar;
+use crate::math::matrix::Matrix;
+use crate::math::scalar::Scalar;
 use std::iter::FromIterator;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 
@@ -65,7 +66,7 @@ impl<T: Scalar> BaseVector<T> {
         }
     }
 
-    pub fn zeros(n: usize) -> Self {
+    pub fn zero(n: usize) -> Self {
         Self::new_with_value(n, T::default())
     }
 
@@ -413,13 +414,13 @@ mod tests {
     }
 
     #[test]
-    fn zeros() {
+    fn zero() {
         let vec = FVector {
             n: N,
             elem: vec![0.0; N],
         };
 
-        assert_eq!(vec, FVector::zeros(N));
+        assert_eq!(vec, FVector::zero(N));
     }
 
     #[test]

@@ -1,33 +1,33 @@
-use crate::tools::math::scalar::Scalar;
-use std::iter::FromIterator;
+use crate::math::scalar::Scalar;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 
-pub type FMatrix = BaseMatrix<f64>;
-pub type IMatrix = BaseMatrix<i64>;
+pub type FMatrix = Matrix<f64>;
+pub type IMatrix = Matrix<i64>;
 
 // // todo: is this OK? or should I use some sort of Matrix trait?
-// pub struct MatrixSquare<T: Scalar>(BaseMatrix<T>);
+// pub struct MatrixSquare<T: Scalar>(Matrix<T>);
 // pub type FMatrixSquare = MatrixSquare<f64>;
 // pub type IMatrixSquare = MatrixSquare<i64>;
-//
+
 // pub struct MatrixSym<T: Scalar>(MatrixSquare<T>);
-// pub type FMatrixSym = MatrixSquare<f64>;
+// pub struct MatrixSym<T: Scalar>(Matrix<T>);
+// pub type FMatrixSym = MatrixSym<f64>;
 // pub type IMatrixSym = MatrixSquare<i64>;
 
 /*
- * note: cannot use macros from forward_ref, because BaseMatrix<T> does
+ * note: cannot use macros from forward_ref, because Matrix<T> does
  *       implement Copy...
  */
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BaseMatrix<T: Scalar> {
+pub struct Matrix<T: Scalar> {
     rows: usize,
     cols: usize,
     elem: Vec<T>,
 }
 
 // simple getters
-impl<T: Scalar> BaseMatrix<T> {
+impl<T: Scalar> Matrix<T> {
     pub fn rows(&self) -> usize {
         self.rows
     }
@@ -44,7 +44,7 @@ impl<T: Scalar> BaseMatrix<T> {
         self.elem.len()
     }
 
-    pub fn shape(&self) -> (usize, usize) {
+    fn shape(&self) -> (usize, usize) {
         (self.rows, self.cols)
     }
 
@@ -57,7 +57,7 @@ impl<T: Scalar> BaseMatrix<T> {
     }
 }
 
-fn check<T: Scalar>(s: &str, lhs: &BaseMatrix<T>, rhs: &BaseMatrix<T>) {
+fn check<T: Scalar>(s: &str, lhs: &Matrix<T>, rhs: &Matrix<T>) {
     if lhs.shape() != rhs.shape() {
         panic!("[{}] Matrix dimensions are not the same.", s);
     }
@@ -69,36 +69,36 @@ fn check<T: Scalar>(s: &str, lhs: &BaseMatrix<T>, rhs: &BaseMatrix<T>) {
     }
 }
 
-impl<T: Scalar> BaseMatrix<T> {
-    pub fn new(rows: usize, cols: usize) -> BaseMatrix<T> {
+impl<T: Scalar> Matrix<T> {
+    pub fn new(rows: usize, cols: usize) -> Matrix<T> {
         if rows <= 0 {
-            panic!("Cannot allocate BaseMatrix with rows <= 0");
+            panic!("Cannot allocate Matrix with rows <= 0");
         } else if cols <= 0 {
-            panic!("Cannot allocate BaseMatrix with cols <= 0");
+            panic!("Cannot allocate Matrix with cols <= 0");
         }
 
-        BaseMatrix::<T> {
+        Matrix::<T> {
             rows,
             cols,
             elem: Vec::with_capacity(rows * cols),
         }
     }
 
-    pub fn new_with_value(rows: usize, cols: usize, value: T) -> BaseMatrix<T> {
+    pub fn new_with_value(rows: usize, cols: usize, value: T) -> Matrix<T> {
         if rows <= 0 {
-            panic!("Cannot allocate BaseMatrix with rows <= 0");
+            panic!("Cannot allocate Matrix with rows <= 0");
         } else if cols <= 0 {
-            panic!("Cannot allocate BaseMatrix with cols <= 0");
+            panic!("Cannot allocate Matrix with cols <= 0");
         }
 
-        BaseMatrix::<T> {
+        Matrix::<T> {
             rows,
             cols,
             elem: vec![value; rows * cols],
         }
     }
 
-    pub fn zeros(rows: usize, cols: usize) -> BaseMatrix<T> {
+    pub fn zero(rows: usize, cols: usize) -> Matrix<T> {
         Self::new_with_value(rows, cols, T::default())
     }
 
@@ -153,7 +153,7 @@ impl<T: Scalar> BaseMatrix<T> {
         } else {
             let mat = self.clone();
             self.del();
-            *self = BaseMatrix::<T>::new(mat.cols, mat.rows);
+            *self = Matrix::<T>::new(mat.cols, mat.rows);
 
             for i in 0..self.rows {
                 for j in 0..self.cols {
@@ -168,7 +168,7 @@ impl<T: Scalar> BaseMatrix<T> {
 // Index
 // ---------------------------------------------------------------------
 
-impl<T: Scalar> Index<(usize, usize)> for BaseMatrix<T> {
+impl<T: Scalar> Index<(usize, usize)> for Matrix<T> {
     type Output = T;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
@@ -176,221 +176,222 @@ impl<T: Scalar> Index<(usize, usize)> for BaseMatrix<T> {
     }
 }
 
-impl<T: Scalar> IndexMut<(usize, usize)> for BaseMatrix<T> {
+impl<T: Scalar> IndexMut<(usize, usize)> for Matrix<T> {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.elem[index.0 * self.cols + index.1]
     }
 }
 
-// ---------------------------------------------------------------------
-// Add
-// ---------------------------------------------------------------------
+macro_rules! add (
+    ($($add:ident, $add_method:ident,
+       $assign:ident, $assign_method:ident,
+       $t:ty);* $(;)*) => {$(
+    // ---------------------------------------------------------------------
+    // Add
+    // ---------------------------------------------------------------------
 
-// BaseMatrix<T> = BaseMatrix<T> + BaseMatrix<T>
-impl<T: Scalar + Add<Output = T>> Add<BaseMatrix<T>> for BaseMatrix<T> {
-    type Output = BaseMatrix<T>;
+    // Matrix = Matrix + Matrix
+    impl $add<Matrix<$t>> for Matrix<$t> {
+        type Output = Matrix<$t>;
 
-    fn add(self, rhs: BaseMatrix<T>) -> Self::Output {
-        Self::add(self, &rhs)
+        fn $add_method(self, rhs: Matrix<$t>) -> Self::Output {
+            Self::$add_method(self, &rhs)
+        }
     }
-}
 
-// BaseMatrix<T> = BaseMatrix<T> + &BaseMatrix<T>
-impl<T: Scalar + Add<Output = T>> Add<&BaseMatrix<T>> for BaseMatrix<T> {
-    type Output = BaseMatrix<T>;
+    // Matrix = Matrix + &Matrix
+    impl $add<&Matrix<$t>> for Matrix<$t> {
+        type Output = Matrix<$t>;
 
-    fn add(self, rhs: &BaseMatrix<T>) -> Self::Output {
-        check("Add", &self, rhs);
+        fn $add_method(self, rhs: &Matrix<$t>) -> Self::Output {
+            check("$add", &self, rhs);
 
-        let mut mat = self.clone();
-        mat += rhs;
+            let mut mat = self.clone();
+            mat += rhs;
 
-        mat
+            mat
+        }
     }
-}
 
-// BaseMatrix<T> = &BaseMatrix<T> + BaseMatrix<T>
-impl<T: Scalar + Add<Output = T>> Add<BaseMatrix<T>> for &BaseMatrix<T> {
-    type Output = BaseMatrix<T>;
+    // Matrix = &Matrix + Matrix
+    impl $add<Matrix<$t>> for &Matrix<$t> {
+        type Output = Matrix<$t>;
 
-    fn add(self, rhs: BaseMatrix<T>) -> Self::Output {
-        Self::add(self, &rhs)
+        fn $add_method(self, rhs: Matrix<$t>) -> Self::Output {
+            Self::$add_method(self, &rhs)
+        }
     }
-}
 
-// BaseMatrix<T> = &BaseMatrix<T> + &BaseMatrix<T>
-impl<T: Scalar + Add<Output = T>> Add<&BaseMatrix<T>> for &BaseMatrix<T> {
-    type Output = BaseMatrix<T>;
+    // Matrix = &Matrix + &Matrix
+    impl $add<&Matrix<$t>> for &Matrix<$t> {
+        type Output = Matrix<$t>;
 
-    fn add(self, rhs: &BaseMatrix<T>) -> Self::Output {
-        check("Add", self, rhs);
+        fn $add_method(self, rhs: &Matrix<$t>) -> Self::Output {
+            check("$add", self, rhs);
 
-        let mut mat = self.clone();
-        mat += rhs;
+            let mut mat = self.clone();
+            mat += rhs;
 
-        mat
+            mat
+        }
     }
-}
 
-// ---------------------------------------------------------------------
-// AddAssign
-// ---------------------------------------------------------------------
-
-// allows BaseMatrix += BaseMatrix
-impl<T: Scalar> AddAssign<BaseMatrix<T>> for BaseMatrix<T> {
-    fn add_assign(&mut self, rhs: Self) {
-        Self::add_assign(self, &rhs)
+    // ---------------------------------------------------------------------
+    // AddAssign
+    // ---------------------------------------------------------------------
+    // allows Matrix += Matrix
+    impl $assign<Matrix<$t>> for Matrix<$t> {
+        fn $assign_method(&mut self, rhs: Self) {
+            Self::$assign_method(self, &rhs)
+        }
     }
-}
 
-// allows BaseMatrix += &BaseMatrix
-impl<T: Scalar> AddAssign<&BaseMatrix<T>> for BaseMatrix<T> {
-    fn add_assign(&mut self, rhs: &Self) {
-        check("AddAssign", self, rhs);
+    // allows Matrix += &Matrix
+    impl $assign<&Matrix<$t>> for Matrix<$t> {
+        fn $assign_method(&mut self, rhs: &Self) {
+            check("$assign", self, rhs);
 
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                self[(i, j)] += rhs[(i, j)];
+            for i in 0..self.rows {
+                for j in 0..self.cols {
+                    self[(i, j)] += rhs[(i, j)];
+                }
             }
         }
     }
-}
+    )*};
+);
+
+add!(
+    Add, add, AddAssign, add_assign, f64;
+    Add, add, AddAssign, add_assign, i64;
+);
 
 // ---------------------------------------------------------------------
 // Mul
 // ---------------------------------------------------------------------
 
-// BaseMatrix = BaseMatrix * scalar
-impl<T: Scalar> Mul<T> for BaseMatrix<T>
-where
-    Vec<T>: FromIterator<<T as Mul>::Output>,
-{
-    type Output = BaseMatrix<T>;
+macro_rules! mul_matrix_scalar (
+    ($($imp:ident, $method:ident, $t:ty);* $(;)*) => {$(
+    // Matrix = Matrix * scalar
+    impl $imp<$t> for Matrix<$t> {
+        type Output = Matrix<$t>;
 
-    fn mul(self, rhs: T) -> Self::Output {
-        Self::mul(self, &rhs)
-    }
-}
-
-// BaseMatrix = BaseMatrix * &scalar
-impl<T: Scalar> Mul<&T> for BaseMatrix<T>
-where
-    Vec<T>: FromIterator<<T as Mul>::Output>,
-{
-    type Output = BaseMatrix<T>;
-
-    fn mul(self, rhs: &T) -> Self::Output {
-        if self.is_empty() {
-            panic!("[Mul] Matrix is empty.");
-        }
-
-        Self::Output {
-            elem: self.elem.into_iter().map(|v| v * *rhs).collect(),
-            ..self
+        fn $method(self, rhs: $t) -> Self::Output {
+            Self::mul(self, &rhs)
         }
     }
-}
 
-// BaseMatrix = &BaseMatrix * scalar
-impl<T: Scalar> Mul<T> for &BaseMatrix<T>
-where
-    Vec<T>: FromIterator<<T as Mul>::Output>,
-{
-    type Output = BaseMatrix<T>;
+    // Matrix = Matrix * &scalar
+    impl $imp<&$t> for Matrix<$t> {
+        type Output = Matrix<$t>;
 
-    fn mul(self, rhs: T) -> Self::Output {
-        Self::mul(self, &rhs)
-    }
-}
+        fn $method(self, rhs: &$t) -> Self::Output {
+            if self.is_empty() {
+                panic!("[Mul] Matrix is empty.");
+            }
 
-// BaseMatrix = &BaseMatrix * &scalar
-impl<T: Scalar> Mul<&T> for &BaseMatrix<T>
-where
-    Vec<T>: FromIterator<<T as Mul>::Output>,
-{
-    type Output = BaseMatrix<T>;
-
-    fn mul(self, rhs: &T) -> Self::Output {
-        if self.is_empty() {
-            panic!("[Mul] Matrix is empty.");
-        }
-
-        Self::Output {
-            elem: self.elem.iter().map(|v| *v * *rhs).collect(),
-            ..*self
+            Self::Output {
+                elem: self.elem.into_iter().map(|v| v * rhs).collect(),
+                ..self
+            }
         }
     }
-}
 
-// todo: make it work with generics
-// https://users.rust-lang.org/t/implementing-generic-trait-with-local-struct-on-local-trait/23225
-// BaseMatrix = scalar * BaseMatrix
-// impl<T: Scalar> Mul<BaseMatrix<T>> for T {
-//     type Output = BaseMatrix<T>;
-//
-//     fn mul(self, rhs: BaseMatrix<T>) -> Self::Output {
-//         Self::Output {
-//             elem: rhs.elem.into_iter().map(|v| v * self).collect(),
-//             ..rhs
-//         }
-//     }
-// }
+    // Matrix = &Matrix * scalar
+    impl $imp<$t> for &Matrix<$t> {
+        type Output = Matrix<$t>;
 
-// FMatrix = scalar * FMatrix
-impl Mul<FMatrix> for f64 {
-    type Output = FMatrix;
-
-    fn mul(self, rhs: FMatrix) -> Self::Output {
-        Self::mul(self, &rhs)
-    }
-}
-
-// FMatrix = scalar * &FMatrix
-impl Mul<&FMatrix> for f64 {
-    type Output = FMatrix;
-
-    fn mul(self, rhs: &FMatrix) -> Self::Output {
-        Self::Output {
-            elem: rhs.elem.iter().map(|v| v * self).collect(),
-            ..*rhs
+        fn $method(self, rhs: $t) -> Self::Output {
+            Self::mul(self, &rhs)
         }
     }
-}
 
-// FMatrix = &scalar * FMatrix
-impl Mul<FMatrix> for &f64 {
-    type Output = FMatrix;
+    // Matrix = &Matrix * &scalar
+    impl $imp<&$t> for &Matrix<$t> {
+        type Output = Matrix<$t>;
 
-    fn mul(self, rhs: FMatrix) -> Self::Output {
-        Self::mul(self, &rhs)
-    }
-}
+        fn $method(self, rhs: &$t) -> Self::Output {
+            if self.is_empty() {
+                panic!("[Mul] Matrix is empty.");
+            }
 
-// FMatrix = &scalar * &FMatrix
-impl Mul<&FMatrix> for &f64 {
-    type Output = FMatrix;
-
-    fn mul(self, rhs: &FMatrix) -> Self::Output {
-        Self::Output {
-            elem: rhs.elem.iter().map(|v| v * self).collect(),
-            ..*rhs
+            Self::Output {
+                elem: self.elem.iter().map(|v| v * rhs).collect(),
+                ..*self
+            }
         }
     }
-}
+
+    // Matrix = scalar * Matrix
+    impl $imp<Matrix<$t>> for $t {
+        type Output = Matrix<$t>;
+
+        fn $method(self, rhs: Matrix<$t>) -> Self::Output {
+            Self::mul(self, &rhs)
+        }
+    }
+
+    // Matrix = scalar * &Matrix
+    impl $imp<&Matrix<$t>> for $t {
+        type Output = Matrix<$t>;
+
+        fn $method(self, rhs: &Matrix<$t>) -> Self::Output {
+            if rhs.is_empty() {
+                panic!("[Mul] Matrix is empty.");
+            }
+
+            Self::Output {
+                elem: rhs.elem.iter().map(|v| v * self).collect(),
+                ..*rhs
+            }
+        }
+    }
+
+    // Matrix = &scalar * Matrix
+    impl $imp<Matrix<$t>> for &$t {
+        type Output = Matrix<$t>;
+
+        fn $method(self, rhs: Matrix<$t>) -> Self::Output {
+            Self::mul(self, &rhs)
+        }
+    }
+
+    // Matrix = &scalar * &Matrix
+    impl $imp<&Matrix<$t>> for &$t {
+        type Output = Matrix<$t>;
+
+        fn $method(self, rhs: &Matrix<$t>) -> Self::Output {
+            if rhs.is_empty() {
+                panic!("[Mul] Matrix is empty.");
+            }
+
+            Self::Output {
+                elem: rhs.elem.iter().map(|v| v * self).collect(),
+                ..*rhs
+            }
+        }
+    }
+    )*};
+);
+
+mul_matrix_scalar!(
+    Mul, mul, f64;
+    Mul, mul, i64;
+);
 
 // ---------------------------------------------------------------------
 // MulAssign
 // ---------------------------------------------------------------------
 
-// allows BaseMatrix *= scalar
-impl<T: Scalar> MulAssign<T> for BaseMatrix<T> {
+// allows Matrix *= scalar
+impl<T: Scalar> MulAssign<T> for Matrix<T> {
     fn mul_assign(&mut self, rhs: T) {
         Self::mul_assign(self, &rhs)
     }
 }
 
-// allows BaseMatrix *= &scalar
-impl<T: Scalar> MulAssign<&T> for BaseMatrix<T> {
+// allows Matrix *= &scalar
+impl<T: Scalar> MulAssign<&T> for Matrix<T> {
     fn mul_assign(&mut self, rhs: &T) {
         if self.is_empty() {
             panic!("[Mul] Matrix is empty.");
@@ -406,20 +407,20 @@ impl<T: Scalar> MulAssign<&T> for BaseMatrix<T> {
 // Sub
 // ---------------------------------------------------------------------
 
-// BaseMatrix<T> = BaseMatrix<T> - BaseMatrix<T>
-impl<T: Scalar + Sub<Output = T>> Sub<BaseMatrix<T>> for BaseMatrix<T> {
-    type Output = BaseMatrix<T>;
+// Matrix<T> = Matrix<T> - Matrix<T>
+impl<T: Scalar + Sub<Output = T>> Sub<Matrix<T>> for Matrix<T> {
+    type Output = Matrix<T>;
 
-    fn sub(self, rhs: BaseMatrix<T>) -> Self::Output {
+    fn sub(self, rhs: Matrix<T>) -> Self::Output {
         Self::sub(self, &rhs)
     }
 }
 
-// BaseMatrix<T> = BaseMatrix<T> - &BaseMatrix<T>
-impl<T: Scalar + Sub<Output = T>> Sub<&BaseMatrix<T>> for BaseMatrix<T> {
-    type Output = BaseMatrix<T>;
+// Matrix<T> = Matrix<T> - &Matrix<T>
+impl<T: Scalar + Sub<Output = T>> Sub<&Matrix<T>> for Matrix<T> {
+    type Output = Matrix<T>;
 
-    fn sub(self, rhs: &BaseMatrix<T>) -> Self::Output {
+    fn sub(self, rhs: &Matrix<T>) -> Self::Output {
         check("Sub", &self, rhs);
 
         let mut mat = self.clone();
@@ -429,20 +430,20 @@ impl<T: Scalar + Sub<Output = T>> Sub<&BaseMatrix<T>> for BaseMatrix<T> {
     }
 }
 
-// BaseMatrix<T> = &BaseMatrix<T> - BaseMatrix<T>
-impl<T: Scalar + Sub<Output = T>> Sub<BaseMatrix<T>> for &BaseMatrix<T> {
-    type Output = BaseMatrix<T>;
+// Matrix<T> = &Matrix<T> - Matrix<T>
+impl<T: Scalar + Sub<Output = T>> Sub<Matrix<T>> for &Matrix<T> {
+    type Output = Matrix<T>;
 
-    fn sub(self, rhs: BaseMatrix<T>) -> Self::Output {
+    fn sub(self, rhs: Matrix<T>) -> Self::Output {
         Self::sub(self, &rhs)
     }
 }
 
-// BaseMatrix<T> = &BaseMatrix<T> - &BaseMatrix<T>
-impl<T: Scalar + Sub<Output = T>> Sub<&BaseMatrix<T>> for &BaseMatrix<T> {
-    type Output = BaseMatrix<T>;
+// Matrix<T> = &Matrix<T> - &Matrix<T>
+impl<T: Scalar + Sub<Output = T>> Sub<&Matrix<T>> for &Matrix<T> {
+    type Output = Matrix<T>;
 
-    fn sub(self, rhs: &BaseMatrix<T>) -> Self::Output {
+    fn sub(self, rhs: &Matrix<T>) -> Self::Output {
         check("Sub", self, rhs);
 
         let mut mat = self.clone();
@@ -456,15 +457,15 @@ impl<T: Scalar + Sub<Output = T>> Sub<&BaseMatrix<T>> for &BaseMatrix<T> {
 // SubAssign
 // ---------------------------------------------------------------------
 
-// allows BaseMatrix -= BaseMatrix
-impl<T: Scalar> SubAssign<BaseMatrix<T>> for BaseMatrix<T> {
-    fn sub_assign(&mut self, rhs: BaseMatrix<T>) {
+// allows Matrix -= Matrix
+impl<T: Scalar> SubAssign<Matrix<T>> for Matrix<T> {
+    fn sub_assign(&mut self, rhs: Matrix<T>) {
         Self::sub_assign(self, &rhs)
     }
 }
 
-// allows BaseMatrix -= &BaseMatrix
-impl<T: Scalar> SubAssign<&BaseMatrix<T>> for BaseMatrix<T> {
+// allows Matrix -= &Matrix
+impl<T: Scalar> SubAssign<&Matrix<T>> for Matrix<T> {
     fn sub_assign(&mut self, rhs: &Self) {
         check("Sub", self, rhs);
 
@@ -508,14 +509,14 @@ mod tests {
     }
 
     #[test]
-    fn zeros() {
+    fn zero() {
         let mat = FMatrix {
             rows: N,
             cols: N,
             elem: vec![0.0; N2],
         };
 
-        assert_eq!(mat, FMatrix::zeros(N, N));
+        assert_eq!(mat, FMatrix::zero(N, N));
     }
 
     #[test]

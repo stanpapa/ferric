@@ -1,5 +1,5 @@
-use crate::tools::math::matrix::BaseMatrix;
-use crate::tools::math::scalar::Scalar;
+use crate::math::matrix::Matrix;
+use crate::math::scalar::Scalar;
 use std::collections::HashMap;
 use std::ops::{Index, IndexMut};
 
@@ -7,7 +7,7 @@ pub type FMatrixContainer = MatrixContainer<f64>;
 
 #[derive(Clone, Default)]
 pub struct MatrixContainer<T: Scalar> {
-    matrices: HashMap<[usize; 2], BaseMatrix<T>>,
+    matrices: HashMap<[usize; 2], Matrix<T>>,
 }
 
 impl<T: Scalar> MatrixContainer<T> {
@@ -15,7 +15,7 @@ impl<T: Scalar> MatrixContainer<T> {
         MatrixContainer::<T>::default()
     }
 
-    pub fn insert(&mut self, index: [usize; 2], mat: &BaseMatrix<T>) {
+    pub fn insert(&mut self, index: [usize; 2], mat: &Matrix<T>) {
         self.matrices.insert(index, mat.clone());
     }
 
@@ -28,7 +28,7 @@ impl<T: Scalar> MatrixContainer<T> {
 }
 
 impl<T: Scalar> Index<[usize; 2]> for MatrixContainer<T> {
-    type Output = BaseMatrix<T>;
+    type Output = Matrix<T>;
 
     fn index(&self, index: [usize; 2]) -> &Self::Output {
         match self.matrices.get(&index) {

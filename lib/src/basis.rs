@@ -1,6 +1,6 @@
-use crate::tools::constants::PI;
-use crate::tools::math::functions::factorial2;
 // use super::gto_bases::*;
+use crate::constants::PI;
+use crate::math::functions::factorial2;
 
 #[derive(Clone)]
 pub struct Shell {

@@ -1,4 +1,4 @@
-use crate::tools::geometry::{distance, Molecule};
+use crate::geometry::{distance, Molecule};
 
 pub fn nuclear_repulsion(mol: &Molecule) -> f64 {
     let n = mol.num_atoms();
@@ -17,7 +17,7 @@ pub fn nuclear_repulsion(mol: &Molecule) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tools::constants::_ANG_AU;
+    use crate::constants::_ANG_AU;
 
     #[test]
     fn nuclear_repulsion() {
