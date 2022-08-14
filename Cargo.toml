@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Stan Papadopoulos <stan.papadopoulos@gmail.com>"]
 edition = "2018"
 
+# cargo run defaults to main executable
+default-run = "ferric"
+
 [[bin]]
 name = "ferric"
 path = "src/main/main.rs"
