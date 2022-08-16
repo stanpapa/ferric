@@ -2,23 +2,13 @@
 // BLAS Level 1: Vector operations
 // ---------------------------------------------------------------------
 
-use crate::math::scalar::Scalar;
-use crate::math::vector::{FVector, Vector};
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
+use crate::math::traits::{Dot, Norm};
+use crate::math::vector::FVector;
+use std::ops::{AddAssign, MulAssign};
 
+use crate::math::matrix::FMatrix;
+use crate::math::utils::check_vec_vec;
 use blas::*;
-
-pub trait Dot<T: Scalar> {
-    type Output;
-
-    fn dot(&self, rhs: &Vector<T>) -> Self::Output;
-}
-
-pub trait Norm {
-    type Output;
-
-    fn norm(&self) -> Self::Output;
-}
 
 // todo:
 //   [ ] DSWAP : swap x and y
@@ -28,19 +18,6 @@ pub trait Norm {
 //   [x] DDOT  : dot product
 //   [x] DNRM2 : Euclidean norm
 
-fn check<T: Scalar>(s: &str, lhs: &Vector<T>, rhs: &Vector<T>) {
-    if lhs.size() != rhs.size() {
-        panic!("[{}] Vector dimensions are not the same.", s);
-    }
-
-    if !lhs.is_ok() {
-        panic!("[{}] lhs is not OK.", s);
-    } else if !rhs.is_ok() {
-        panic!("[{}] rhs is not OK.", s);
-    }
-}
-
-///
 /// Vector Sum
 ///
 // macro_rules! blas_level1 {
@@ -324,7 +301,7 @@ impl AddAssign<FVector> for FVector {
 // allows Vector += &Vector
 impl AddAssign<&FVector> for FVector {
     fn add_assign(&mut self, rhs: &FVector) {
-        check("AddAssign", self, rhs);
+        check_vec_vec("AddAssign", self, rhs);
 
         unsafe {
             daxpy(
@@ -343,7 +320,7 @@ impl Dot<f64> for FVector {
     type Output = f64;
 
     fn dot(&self, rhs: &FVector) -> Self::Output {
-        check("Dot", self, rhs);
+        check_vec_vec("Dot", self, rhs);
 
         unsafe { ddot(self.size() as i32, self.as_slice(), 1, rhs.as_slice(), 1) }
     }
@@ -391,7 +368,7 @@ impl MulAssign<&f64> for FMatrix {
 
 impl FVector {
     pub fn axpy(&mut self, alpha: &f64, x: &FVector) {
-        check("axpy", self, x);
+        check_vec_vec("axpy", self, x);
 
         unsafe {
             daxpy(
@@ -408,9 +385,9 @@ impl FVector {
 
 #[cfg(test)]
 mod tests {
-    use crate::math::blas_level_1::{Dot, Norm};
     use crate::math::matrix::FMatrix;
-    use crate::math::vector::{FVector, IVector};
+    use crate::math::traits::{Dot, Norm};
+    use crate::math::vector::FVector;
 
     const N: usize = 5;
 

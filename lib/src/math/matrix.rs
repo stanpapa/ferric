@@ -1,5 +1,6 @@
 use crate::math::scalar::Scalar;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Deref, DerefMut};
 
 pub type FMatrix = Matrix<f64>;
 pub type IMatrix = Matrix<i64>;
@@ -57,6 +58,23 @@ impl<T: Scalar> Matrix<T> {
     }
 }
 
+// implement `Deref` so, elem can be accessed implicitly
+impl<T: Scalar> Deref for Matrix<T> {
+    type Target = Vec<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.elem
+    }
+}
+
+// WARNING: Do not change len of elem. That will break Vector
+// implement `DerefMut` so, elem can be accessed implicitly
+impl<T: Scalar> DerefMut for Matrix<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.elem
+    }
+}
+
 fn check<T: Scalar>(s: &str, lhs: &Matrix<T>, rhs: &Matrix<T>) {
     if lhs.shape() != rhs.shape() {
         panic!("[{}] Matrix dimensions are not the same.", s);
@@ -95,6 +113,18 @@ impl<T: Scalar> Matrix<T> {
             rows,
             cols,
             elem: vec![value; rows * cols],
+        }
+    }
+
+    pub fn new_from_vec(rows: usize, cols: usize, v: &[T]) -> Self {
+        if rows * cols != v.len() {
+            panic!("[new_from_vec] dimensions are not correct.");
+        }
+
+        Self {
+            rows,
+            cols,
+            elem: v.to_vec(),
         }
     }
 
@@ -384,24 +414,24 @@ mul_matrix_scalar!(
 // ---------------------------------------------------------------------
 
 // allows Matrix *= scalar
-impl<T: Scalar> MulAssign<T> for Matrix<T> {
-    fn mul_assign(&mut self, rhs: T) {
-        Self::mul_assign(self, &rhs)
-    }
-}
-
-// allows Matrix *= &scalar
-impl<T: Scalar> MulAssign<&T> for Matrix<T> {
-    fn mul_assign(&mut self, rhs: &T) {
-        if self.is_empty() {
-            panic!("[Mul] Matrix is empty.");
-        }
-
-        for x in &mut self.elem {
-            *x *= *rhs;
-        }
-    }
-}
+// impl<T: Scalar> MulAssign<T> for Matrix<T> {
+//     fn mul_assign(&mut self, rhs: T) {
+//         Self::mul_assign(self, &rhs)
+//     }
+// }
+//
+// // allows Matrix *= &scalar
+// impl<T: Scalar> MulAssign<&T> for Matrix<T> {
+//     fn mul_assign(&mut self, rhs: &T) {
+//         if self.is_empty() {
+//             panic!("[Mul] Matrix is empty.");
+//         }
+//
+//         for x in &mut self.elem {
+//             *x *= *rhs;
+//         }
+//     }
+// }
 
 // ---------------------------------------------------------------------
 // Sub
@@ -506,6 +536,13 @@ mod tests {
         };
 
         assert_eq!(mat, FMatrix::new_with_value(N, N, 5.0));
+    }
+
+    #[test]
+    fn new_from_vec() {
+        let mat = FMatrix::new_from_vec(2, 2, &[1.5, 1.5, 1.5, 1.5]);
+
+        assert_eq!(mat, FMatrix::new_with_value(2, 2, 1.5));
     }
 
     #[test]
