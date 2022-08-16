@@ -84,7 +84,6 @@ impl<T: Scalar> Vector<T> {
     }
 }
 
-// WARNING: Do not change len of elem. That will break Vector
 // implement `Deref` so, Vector<T>.iter() can be called
 impl<T: Scalar> Deref for Vector<T> {
     type Target = Vec<T>;
@@ -94,6 +93,7 @@ impl<T: Scalar> Deref for Vector<T> {
     }
 }
 
+// WARNING: Do not change len of elem. That will break Vector
 // implement `DerefMut` so, Vector<T>.iter_mut() can be called
 impl<T: Scalar> DerefMut for Vector<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {

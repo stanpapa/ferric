@@ -2,7 +2,7 @@
 name = "ferric"
 version = "0.1.0"
 authors = ["Stan Papadopoulos <stan.papadopoulos@gmail.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 
 # cargo run defaults to main executable

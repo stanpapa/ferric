@@ -20,12 +20,11 @@ pub trait Norm {
     fn norm(&self) -> Self::Output;
 }
 
-/// todo:
-///  - vec + scal
-///  - Hadamard
-//   - mat * scal
-//   [ ] DAXPY : y = a * x + y
+// todo:
+//   [ ] DSWAP : swap x and y
 //   [x] DSCAL : x = a * x
+//   [ ] DCOPY : copy x into y
+//   [x] DAXPY : y = a * x + y
 //   [x] DDOT  : dot product
 //   [x] DNRM2 : Euclidean norm
 
@@ -360,16 +359,49 @@ impl Norm for FVector {
 
 // Vector *= scalar
 impl MulAssign<f64> for FVector {
-    fn mul_assign(&mut self, rhs: f64) {
-        Self::mul_assign(self, &rhs)
+    fn mul_assign(&mut self, alpha: f64) {
+        Self::mul_assign(self, &alpha)
     }
 }
 
-// // Vector *= &scalar
+// Vector *= &scalar
 impl MulAssign<&f64> for FVector {
-    fn mul_assign(&mut self, rhs: &f64) {
+    fn mul_assign(&mut self, alpha: &f64) {
         unsafe {
-            dscal(self.size() as i32, *rhs, self.as_mut_slice(), 1);
+            dscal(self.size() as i32, *alpha, self.as_mut_slice(), 1);
+        }
+    }
+}
+
+// Matrix *= scalar
+impl MulAssign<f64> for FMatrix {
+    fn mul_assign(&mut self, alpha: f64) {
+        Self::mul_assign(self, &alpha)
+    }
+}
+
+// Matrix *= &scalar
+impl MulAssign<&f64> for FMatrix {
+    fn mul_assign(&mut self, alpha: &f64) {
+        unsafe {
+            dscal(self.size() as i32, *alpha, self.as_mut_slice(), 1);
+        }
+    }
+}
+
+impl FVector {
+    pub fn axpy(&mut self, alpha: &f64, x: &FVector) {
+        check("axpy", self, x);
+
+        unsafe {
+            daxpy(
+                self.size() as i32,
+                *alpha,
+                x.as_slice(),
+                1,
+                self.as_mut_slice(),
+                1,
+            );
         }
     }
 }
@@ -377,6 +409,7 @@ impl MulAssign<&f64> for FVector {
 #[cfg(test)]
 mod tests {
     use crate::math::blas_level_1::{Dot, Norm};
+    use crate::math::matrix::FMatrix;
     use crate::math::vector::{FVector, IVector};
 
     const N: usize = 5;
@@ -449,6 +482,13 @@ mod tests {
 
         vec *= &2.0;
         assert_eq!(vec, FVector::new_with_value(N, 4.0));
+
+        let mut mat = FMatrix::new_with_value(N, N, 1.0);
+        mat *= 2.0;
+        assert_eq!(mat, FMatrix::new_with_value(N, N, 2.0));
+
+        mat *= &2.0;
+        assert_eq!(mat, FMatrix::new_with_value(N, N, 4.0));
     }
 
     // #[test]
@@ -481,6 +521,15 @@ mod tests {
     //     b -= a;
     //     assert_eq!(b, c);
     // }
+
+    #[test]
+    fn axpy() {
+        let mut y = FVector::new_with_value(N, 2.0);
+        let x = FVector::new_with_value(N, 3.0);
+        y.axpy(&3.0, &x);
+
+        assert_eq!(y, FVector::new_with_value(N, 11.0));
+    }
 
     #[test]
     fn dot() {
