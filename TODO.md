@@ -25,6 +25,7 @@
 
 ## Math
 - [x] Custom Matrix, Vector, MatrixContainer structs
+- [ ] Use BLAS (Accelerate)
 - [ ] BLAS Level 1
 - [ ] BLAS Level 2
 - [ ] BLAS Level 3

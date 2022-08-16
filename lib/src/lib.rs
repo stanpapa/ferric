@@ -7,3 +7,6 @@ pub mod gto_integrals;
 pub mod math;
 pub mod misc;
 pub mod orbitals;
+
+extern crate blas;
+extern crate blas_src;
