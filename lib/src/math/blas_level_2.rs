@@ -44,7 +44,7 @@ impl FVector {
         check_vec_vec("dgemv", x, self);
         check_mat_vec("dgemv", a, x);
 
-        let c = {
+        let trans = {
             if transpose {
                 b'T'
             } else {
@@ -54,7 +54,7 @@ impl FVector {
 
         unsafe {
             dgemv(
-                c,
+                trans,
                 a.rows() as i32,
                 a.cols() as i32,
                 alpha,
