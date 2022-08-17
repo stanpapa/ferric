@@ -21,11 +21,7 @@ impl Default for Shell {
 
 impl Shell {
     pub fn new(l: i32, exps: Vec<f64>, coefs: Vec<f64>) -> Shell {
-        Shell {
-            l: l,
-            exps: exps,
-            coefs: coefs,
-        }
+        Shell { l, exps, coefs }
     }
 }
 
@@ -44,28 +40,31 @@ impl BasisShell {
             cbf: vec![],
         };
         basis_shell.generate_cartesian_shell();
-        return basis_shell;
+
+        basis_shell
     } // new
 
-    pub fn dim(&self) -> i32 {
-        return 2 * self.shell.l + 1;
+    pub fn dim(&self) -> usize {
+        return (2 * self.shell.l + 1) as usize;
     }
-    pub fn cdim(&self) -> i32 {
-        return (self.shell.l + 1) * (self.shell.l + 2) / 2;
+    pub fn cdim(&self) -> usize {
+        return ((self.shell.l + 1) * (self.shell.l + 2) / 2) as usize;
     }
 
     fn generate_cartesian_shell(&mut self) {
         let gaussians: Vec<[i32; 3]> = gaussian_components(&self.shell.l);
         self.cbf = Vec::with_capacity(gaussians.len());
-        for g in gaussians.iter() {
+
+        for g in gaussians {
             self.cbf.push(CartesianBasisFunction {
                 origin: self.origin,
-                ml: *g,
-                exps: (*self.shell.exps).to_vec(),
-                coefs: (*self.shell.coefs).to_vec(),
+                ml: g,
+                exps: self.shell.exps.to_vec(),
+                coefs: self.shell.coefs.to_vec(),
                 norm: vec![],
             });
         } // g
+
         for i in 0..self.cbf.len() {
             self.cbf[i].normalize();
         } // f
@@ -77,20 +76,22 @@ pub struct Basis {
 }
 
 impl Basis {
-    pub fn dim(self) -> i32 {
-        let mut dim = 0;
-        for shell in self.shells {
-            dim += shell.dim();
-        }
-        return dim;
+    pub fn dim(self) -> usize {
+        self.shells.iter().map(|s| s.dim()).sum()
+        // let mut dim = 0;
+        // for shell in self.shells {
+        //     dim += shell.dim();
+        // }
+        // return dim;
     } // fn dim
 
-    pub fn cdim(self) -> i32 {
-        let mut dim = 0;
-        for shell in self.shells {
-            dim += shell.cdim();
-        }
-        return dim;
+    pub fn cdim(self) -> usize {
+        self.shells.iter().map(|s| s.cdim()).sum()
+        // let mut dim = 0;
+        // for shell in self.shells {
+        //     dim += shell.cdim();
+        // }
+        // return dim;
     } // fn cdim
 } // impl Basis
 
@@ -110,27 +111,28 @@ impl CartesianBasisFunction {
         let j = self.ml[1];
         let k = self.ml[2];
         let l: f64 = (i + j + k).into();
+
         self.norm = Vec::with_capacity(self.exps.len());
         for a in self.exps.iter() {
-            let Fijk: f64 =
+            let f_ijk: f64 =
                 (factorial2(2 * i - 1) * factorial2(2 * j - 1) * factorial2(2 * k - 1)).into();
             self.norm.push(
-                (2.0_f64.powf(2.0 * l + 1.5) * a.powf(l + 1.5) / (PI.powf(1.5) * Fijk)).sqrt(),
+                (2.0_f64.powf(2.0 * l + 1.5) * a.powf(l + 1.5) / (PI.powf(1.5) * f_ijk)).sqrt(),
             );
         } // a
 
         // TODO prefactor?
 
-        let mut N: f64 = 0.0;
+        let mut norm: f64 = 0.0;
         for bra in 0..self.exps.len() {
             for ket in 0..self.exps.len() {
-                N += self.norm[bra] * self.norm[ket] * self.coefs[bra] * self.coefs[ket] / 1.0;
+                norm += self.norm[bra] * self.norm[ket] * self.coefs[bra] * self.coefs[ket] / 1.0;
             } // ket
         } // bra
 
-        N = N.powf(-0.5);
+        norm = norm.powf(-0.5);
         for c in 0..self.coefs.len() {
-            self.coefs[c] *= N;
+            self.coefs[c] *= norm;
         } // c
     } // normalize
 } // impl CartesianBasisFunction
@@ -158,7 +160,7 @@ fn gaussian_components(l: &i32) -> Vec<[i32; 3]> {
         count < n
     } {}
 
-    return components;
+    components
 } // fn gaussian_components
 
 // #[cfg(test)]
