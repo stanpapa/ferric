@@ -18,5 +18,5 @@ fn main() {
 
     gto_bases::def2_tzvp::load_def2_tzvp();
 
-    system_command("ferric-scf").expect("Something went wrong.");
+    system_command("ferric_scf").expect("Something went wrong.");
 }

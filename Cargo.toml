@@ -13,7 +13,7 @@ name = "ferric"
 path = "src/main/main.rs"
 
 [[bin]]
-name = "ferric-scf"
+name = "ferric_scf"
 path = "src/scf/main.rs"
 
 [dependencies]
