@@ -32,3 +32,5 @@
 
 ## Properties
 - [ ] Dipole
+
+# GUI?

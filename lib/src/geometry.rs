@@ -91,9 +91,9 @@ impl Atom {
         self.el.mass()
     }
 
-    // pub fn origin(&self) -> &[f64; 3] {
-    //     &self.origin
-    // }
+    pub fn origin(&self) -> &[f64; 3] {
+        &self.origin
+    }
     //
     // pub fn origin_mut(&mut self) -> &mut [f64; 3] {
     //     &mut self.origin

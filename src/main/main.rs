@@ -1,4 +1,5 @@
-use ferric_lib::gto_bases;
+use ferric_lib::geometry::Molecule;
+use ferric_lib::gto_bases::sto_3g::load_sto_3g;
 use ferric_lib::misc::system::system_command;
 
 fn print_banner() {
@@ -16,7 +17,9 @@ fn print_banner() {
 fn main() {
     print_banner();
 
-    gto_bases::def2_tzvp::load_def2_tzvp();
+    let mol = Molecule::default();
+
+    load_sto_3g(mol.atoms());
 
     system_command("ferric_scf").expect("Something went wrong.");
 }
