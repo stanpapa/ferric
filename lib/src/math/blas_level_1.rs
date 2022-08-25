@@ -403,6 +403,7 @@ impl FVector {
 #[cfg(test)]
 mod tests {
     use crate::math::matrix::FMatrix;
+    use crate::math::matrix_symmetric::FMatrixSym;
     use crate::math::traits::{Dot, Norm};
     use crate::math::vector::FVector;
 
@@ -490,6 +491,13 @@ mod tests {
 
         mat *= &2.0;
         assert_eq!(mat, FMatrix::new_with_value(N, N, 4.0));
+
+        let mut mat_sym = FMatrixSym::new_with_value(N, 1.0);
+        mat_sym *= 2.0;
+        assert_eq!(mat_sym, FMatrixSym::new_with_value(N, 2.0));
+
+        mat_sym *= &2.0;
+        assert_eq!(mat_sym, FMatrixSym::new_with_value(N, 4.0));
     }
 
     // #[test]
