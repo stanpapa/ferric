@@ -1,5 +1,5 @@
 use crate::math::scalar::Scalar;
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign};
 use std::ops::{Deref, DerefMut};
 
 pub type FMatrix = Matrix<f64>;

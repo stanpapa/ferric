@@ -5,6 +5,7 @@ pub mod blas_level_3;
 pub mod functions;
 pub mod matrix;
 pub mod matrix_container;
+pub mod matrix_symmetric;
 mod scalar;
 mod traits;
 mod utils;

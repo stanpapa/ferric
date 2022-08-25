@@ -7,6 +7,7 @@ use crate::math::vector::FVector;
 use std::ops::{AddAssign, MulAssign};
 
 use crate::math::matrix::FMatrix;
+use crate::math::matrix_symmetric::FMatrixSym;
 use crate::math::utils::check_vec_vec;
 use blas::*;
 
@@ -366,6 +367,22 @@ impl MulAssign<&f64> for FMatrix {
     }
 }
 
+// MatrixSym *= scalar
+impl MulAssign<f64> for FMatrixSym {
+    fn mul_assign(&mut self, alpha: f64) {
+        Self::mul_assign(self, &alpha)
+    }
+}
+
+// MatrixSym *= &scalar
+impl MulAssign<&f64> for FMatrixSym {
+    fn mul_assign(&mut self, alpha: &f64) {
+        unsafe {
+            dscal(self.num_elements() as i32, *alpha, self.as_mut_slice(), 1);
+        }
+    }
+}
+
 impl FVector {
     pub fn axpy(&mut self, alpha: &f64, x: &FVector) {
         check_vec_vec("axpy", self, x);
@@ -390,6 +407,13 @@ mod tests {
     use crate::math::vector::FVector;
 
     const N: usize = 5;
+
+    //   [ ] DSWAP : swap x and y
+    //   [x] DSCAL : x = a * x
+    //   [ ] DCOPY : copy x into y
+    //   [x] DAXPY : y = a * x + y
+    //   [x] DDOT  : dot product
+    //   [x] DNRM2 : Euclidean norm
 
     // #[test]
     // fn sum() {
