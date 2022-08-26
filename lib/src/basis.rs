@@ -2,6 +2,7 @@
 use crate::constants::PI;
 use crate::geometry::Atom;
 use crate::math::functions::Factorial;
+use crate::math::matrix::{FMatrix, Matrix};
 
 #[derive(Clone, Default)]
 pub struct Shell {
@@ -14,6 +15,16 @@ impl Shell {
     pub fn new(l: u8, exps: Vec<f64>, coefs: Vec<f64>) -> Self {
         Self { l, exps, coefs }
     }
+}
+
+/// return sperical harmonicas basis dimension
+pub fn sdim(l: &u8) -> usize {
+    usize::from(2 * l + 1)
+}
+
+/// return cartesian basis dimension
+pub fn cdim(l: &u8) -> usize {
+    usize::from((l + 1) * (l + 2) / 2)
 }
 
 #[derive(Default, Clone)]
@@ -37,13 +48,13 @@ impl BasisShell {
     }
 
     /// return sperical harmonicas basis dimension
-    pub fn dim(&self) -> usize {
-        return (2 * self.shell.l + 1) as usize;
+    pub fn sdim(&self) -> usize {
+        sdim(&self.shell.l)
     }
 
     /// return cartesian basis dimension
     pub fn cdim(&self) -> usize {
-        return ((self.shell.l + 1) * (self.shell.l + 2) / 2) as usize;
+        cdim(&self.shell.l)
     }
 
     fn generate_cartesian_shell(&mut self) {
@@ -86,8 +97,8 @@ impl Basis {
     }
 
     /// return sperical harmonicas basis dimension
-    pub fn dim(self) -> usize {
-        self.shells.iter().map(|s| s.dim()).sum()
+    pub fn sdim(self) -> usize {
+        self.shells.iter().map(|s| s.sdim()).sum()
     }
 
     /// return sperical harmonicas basis dimension
@@ -110,6 +121,36 @@ impl Basis {
     //     }
     //     offset
     // }
+
+    /// Cartesian to spherical harmenics transformation matrix
+    fn cartesian_spherical_transformation(lmax: &u8) -> FMatrix {
+        // cartesian components
+        let mut lx: u8;
+        let mut ly: u8;
+        let mut lz: u8;
+
+        let l = i16::from(*lmax);
+
+        let xyz = gaussian_layout(lmax);
+        let mut mat = FMatrix::zero(usize::from(*lmax), usize::from(*lmax));
+
+        for c in 0..cdim(lmax) {
+            lx = xyz[c][0];
+            ly = xyz[c][1];
+            lz = xyz[c][2];
+
+            for m in -l..=l {
+                let j = i16::from(lx) + i16::from(ly) - m.abs();
+                if j >= 0 && j % 2 == 0 {
+                    // todo: body
+                } else {
+                    mat[((m + l) as usize, c)] = 0.0;
+                }
+            }
+        }
+
+        mat
+    }
 }
 
 #[derive(Clone)]
@@ -190,10 +231,66 @@ fn gaussian_layout(l: &u8) -> Vec<[u8; 3]> {
     layout
 }
 
+// Matrix cartesian_spherical_transformation(in int lmax) {
+// int l, m, l2;
+// // cartesian components
+// int lx, ly, lz;
+// int c, i, j, k, exponent;
+// double s, s1, s2;
+//
+//
+// l=lmax;
+// auto xyz = GaussianLayout( lmax );
+// auto matrix = slice!double( ldim( l ), cdim( l ) );
+// {
+// l2 = l*l;
+// for(c=0; c<cdim(l); c++) {
+// lx = xyz[c][0];
+// ly = xyz[c][1];
+// lz = xyz[c][2];
+//
+// for(m=-l; m<=l; m++) {
+// j = lx+ly-abs(m);
+// if (j>=0 && j%2==0) {
+// j = j/2;
+// s1 = 0.0;
+//
+// for(i=0; i<=(l-abs(m))/2; i++) {
+// s2 = 0.0;
+// for(k=0; k<=j; k++) {
+// if( (m<0 && abs(abs(m)-lx)%2==1) ||
+// (m>0 && abs(abs(m)-lx)%2==0) ) {
+// exponent = (abs(m)-lx+2*k)/2;
+// s = pow(-1.0, exponent)*sqrt(2.0);
+// }
+// else if (m==0 && lx%2==0) {
+// exponent = k-lx/2;
+// s = pow(-1.0, exponent);
+// }
+// else {
+// s = 0.0;
+// }
+// s2 = s2 + n_over_k(j, k)*
+// n_over_k(abs(m),(lx-2*k))*s;
+// }
+// s1 = s1 + n_over_k(l,i)*n_over_k(i,j)*
+// pow(-1.0,i)*fact(2*l-2*i)/fact(l-abs(m)-2*i)*s2;
+// }
+// matrix[ m+l, c] =
+// sqrt(1.0*(fact(2*lx)*fact(2*ly)*fact(2*lz)*fact(l)*fact(l-abs(m))) /
+// (fact(lx)*fact(ly)*fact(lz)*fact(2*l)*fact(l+abs(m))))*
+// s1 / (pow(2.0, l)*fact(l));
+// }
+// else
+// matrix[ m+l, c] = 0.0;
+// }
+// }
+// }
+// return matrix;
+// }
+
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     // #[test]
     // fn test_CBF_normalize() {
     //   let mut cbf = CartesianBasisFunction {
