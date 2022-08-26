@@ -11,13 +11,13 @@ use crate::math::matrix_symmetric::FMatrixSym;
 use crate::math::utils::check_vec_vec;
 use blas::*;
 
-// todo:
-//   [ ] DSWAP : swap x and y
-//   [x] DSCAL : x = a * x
-//   [ ] DCOPY : copy x into y
-//   [x] DAXPY : y = a * x + y
-//   [x] DDOT  : dot product
-//   [x] DNRM2 : Euclidean norm
+/// todo:
+///   [ ] DSWAP : swap x and y
+///   [x] DSCAL : x = a * x
+///   [ ] DCOPY : copy x into y
+///   [x] DAXPY : y = a * x + y
+///   [x] DDOT  : dot product
+///   [x] DNRM2 : Euclidean norm
 
 /// Vector Sum
 ///
