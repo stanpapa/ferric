@@ -1,6 +1,7 @@
 use crate::math::matrix::Matrix;
 use crate::math::scalar::Scalar;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::ops::{Index, IndexMut};
 
 pub type FMatrixContainer = MatrixContainer<f64>;
@@ -18,12 +19,15 @@ impl<T: Scalar> MatrixContainer<T> {
     pub fn insert(&mut self, index: [usize; 2], mat: &Matrix<T>) {
         self.matrices.insert(index, mat.clone());
     }
+}
 
-    pub fn print(&self) {
+impl<T: Scalar> Display for MatrixContainer<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for (index, mat) in &self.matrices {
-            println!("{:?}", index);
-            mat.print()
+            writeln!(f, "{:?}\n{}", index, mat)?;
         }
+
+        Ok(())
     }
 }
 

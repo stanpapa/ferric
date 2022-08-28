@@ -1,4 +1,5 @@
 use crate::math::scalar::Scalar;
+use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign};
 use std::ops::{Deref, DerefMut};
 
@@ -142,20 +143,6 @@ impl<T: Scalar> Matrix<T> {
         self.elem.clear();
     }
 
-    pub fn print(&self) {
-        if self.is_empty() {
-            println!("Empty matrix. Nothing to print.");
-            return;
-        }
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                print!("{:12.8} ", self[(i, j)]);
-            }
-            println!()
-        }
-    }
-
     pub fn transpose(&mut self) {
         // vector has not been initialized, so we just swap the rows and cols
         if self.is_empty() {
@@ -209,6 +196,23 @@ impl<T: Scalar> Index<(usize, usize)> for Matrix<T> {
 impl<T: Scalar> IndexMut<(usize, usize)> for Matrix<T> {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.elem[index.0 * self.cols + index.1]
+    }
+}
+
+impl<T: Scalar> Display for Matrix<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if self.is_empty() {
+            return Ok(());
+        }
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                write!(f, "{:12.8} ", self[(i, j)])?;
+            }
+            writeln!(f)?;
+        }
+
+        Ok(())
     }
 }
 

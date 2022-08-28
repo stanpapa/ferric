@@ -1,5 +1,6 @@
 use crate::math::scalar::Scalar;
 use std::cmp::{max, min};
+use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign};
 use std::ops::{Deref, DerefMut};
 
@@ -128,21 +129,24 @@ impl<T: Scalar> MatrixSym<T> {
     //     self.elem.clear();
     // }
 
-    pub fn print(&self) {
+    pub fn transpose(&mut self) {}
+}
+
+impl<T: Scalar> Display for MatrixSym<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if self.is_empty() {
-            println!("Empty MatrixSym. Nothing to print.");
-            return;
+            return Ok(());
         }
 
         for i in 0..self.n {
             for j in 0..self.n {
-                print!("{:12.8} ", self[(i, j)]);
+                write!(f, "{:12.8} ", self[(i, j)])?;
             }
-            println!()
+            writeln!(f)?;
         }
-    }
 
-    pub fn transpose(&mut self) {}
+        Ok(())
+    }
 }
 
 // ---------------------------------------------------------------------
