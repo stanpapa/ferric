@@ -108,6 +108,29 @@ impl BinomialCoefficient for $t {
 
 binomial_impl!(u8, u16, u32, u64, usize);
 
+macro_rules! binomial_signed_impl {
+    ($($t:ty),*) => {$(
+
+impl BinomialCoefficient for $t {
+    type Output = usize;
+
+    fn binomial_coefficient(&self, k: &Self) -> Self::Output {
+        if *self < 0 || *k < 0 {
+            panic!("n or k is smaller than 0!");
+        }
+        if k > self {
+            panic!("k is larger than n!");
+        }
+
+        (1..=*k).map(|i| (*self + 1 - i) / i).product::<$t>() as usize
+    }
+}
+
+    )*};
+}
+
+binomial_signed_impl!(i8, i16, i32, i64, isize);
+
 // todo: add test
 pub fn gaussian_product_center(
     a: &f64,
