@@ -1,8 +1,8 @@
-// use super::gto_bases::*;
 use crate::constants::PI;
 use crate::geometry::Atom;
-use crate::math::functions::Factorial;
-use crate::math::matrix::{FMatrix, Matrix};
+use crate::math::functions::{BinomialCoefficient, Factorial};
+use crate::math::matrix::FMatrix;
+use std::collections::HashMap;
 
 #[derive(Clone, Default)]
 pub struct Shell {
@@ -80,19 +80,35 @@ impl BasisShell {
 #[derive(Default)]
 pub struct Basis {
     shells: Vec<BasisShell>,
+
+    l_max: u8,
+    cartesian_to_sperical_trafo: HashMap<u8, FMatrix>,
 }
 
 impl Basis {
     pub fn new(atoms: &Vec<Atom>, shells: Vec<Vec<Shell>>) -> Self {
         let mut basis_shells: Vec<BasisShell> = Default::default();
+        let mut l_max = 0;
         for atom in atoms {
             for shell in &shells[atom.z() as usize] {
                 basis_shells.push(BasisShell::new(*atom.origin(), shell.clone()));
+                if shell.l > l_max {
+                    l_max = shell.l;
+                }
             }
+        }
+
+        // construct cartesian to spherical transformatin matrix
+        let mut cartesian_to_sperical_trafo = HashMap::<u8, FMatrix>::new();
+        for l in 0..=l_max {
+            cartesian_to_sperical_trafo.insert(l, Self::cartesian_spherical_transformation(&l));
+            println!("{}", cartesian_to_sperical_trafo.get(&l).unwrap());
         }
 
         Self {
             shells: basis_shells,
+            l_max,
+            cartesian_to_sperical_trafo,
         }
     }
 
@@ -129,10 +145,16 @@ impl Basis {
         let mut ly: u8;
         let mut lz: u8;
 
+        let mut exponent: f64;
+
+        let mut s: f64;
+        let mut s1: f64;
+        let mut s2: f64;
+
         let l = i16::from(*lmax);
 
         let xyz = gaussian_layout(lmax);
-        let mut mat = FMatrix::zero(usize::from(*lmax), usize::from(*lmax));
+        let mut mat = FMatrix::zero(sdim(lmax), cdim(lmax));
 
         for c in 0..cdim(lmax) {
             lx = xyz[c][0];
@@ -140,9 +162,53 @@ impl Basis {
             lz = xyz[c][2];
 
             for m in -l..=l {
-                let j = i16::from(lx) + i16::from(ly) - m.abs();
+                let mut j = i16::from(lx) + i16::from(ly) - m.abs();
                 if j >= 0 && j % 2 == 0 {
-                    // todo: body
+                    j /= 2;
+                    s1 = 0.0;
+
+                    for i in 0..=((l - m.abs()) / 2) {
+                        s2 = 0.0;
+                        for k in 0..=j {
+                            if (m < 0 && (m.abs() - i16::from(lx)).abs() % 2 == 1)
+                                || (m > 0 && (m.abs() - i16::from(lx)).abs() % 2 == 0)
+                            {
+                                exponent = f64::from((m.abs() - i16::from(lx) + 2 * k) / 2);
+                                s = -1.0_f64.powf(exponent) * 2.0_f64.sqrt();
+                            } else if m == 0 && lx % 2 == 0 {
+                                exponent = f64::from(k - i16::from(lx) / 2);
+                                s = -1.0f64.powf(exponent);
+                            } else {
+                                s = 0.0;
+                            }
+
+                            s2 += j.binomial_coefficient(&k) as f64
+                                * (m.abs().binomial_coefficient(&(i16::from(lx) - 2 * k))) as f64
+                                * s;
+                        }
+
+                        s1 += l.binomial_coefficient(&i) as f64
+                            * i.binomial_coefficient(&j) as f64
+                            * -1.0f64.powf(f64::from(i))
+                            * (2 * l - 2 * i).factorial() as f64
+                            / (l - m.abs() - 2 * i).factorial() as f64
+                            * s2;
+                    }
+
+                    mat[((m + l) as usize, c)] = (((2 * lx).factorial() as f64
+                        * (2 * ly).factorial() as f64
+                        * (2 * lz).factorial() as f64
+                        * l.factorial() as f64
+                        * (l - m.abs()).factorial() as f64)
+                        / (lx.factorial() as f64
+                            * ly.factorial() as f64
+                            * lz.factorial() as f64
+                            * (2 * l).factorial() as f64
+                            * (l + m.abs()).factorial() as f64))
+                        .sqrt()
+                        * s1
+                        / 2.0f64.powf(f64::from(l))
+                        * l.factorial() as f64;
                 } else {
                     mat[((m + l) as usize, c)] = 0.0;
                 }
@@ -231,66 +297,10 @@ fn gaussian_layout(l: &u8) -> Vec<[u8; 3]> {
     layout
 }
 
-// Matrix cartesian_spherical_transformation(in int lmax) {
-// int l, m, l2;
-// // cartesian components
-// int lx, ly, lz;
-// int c, i, j, k, exponent;
-// double s, s1, s2;
-//
-//
-// l=lmax;
-// auto xyz = GaussianLayout( lmax );
-// auto matrix = slice!double( ldim( l ), cdim( l ) );
-// {
-// l2 = l*l;
-// for(c=0; c<cdim(l); c++) {
-// lx = xyz[c][0];
-// ly = xyz[c][1];
-// lz = xyz[c][2];
-//
-// for(m=-l; m<=l; m++) {
-// j = lx+ly-abs(m);
-// if (j>=0 && j%2==0) {
-// j = j/2;
-// s1 = 0.0;
-//
-// for(i=0; i<=(l-abs(m))/2; i++) {
-// s2 = 0.0;
-// for(k=0; k<=j; k++) {
-// if( (m<0 && abs(abs(m)-lx)%2==1) ||
-// (m>0 && abs(abs(m)-lx)%2==0) ) {
-// exponent = (abs(m)-lx+2*k)/2;
-// s = pow(-1.0, exponent)*sqrt(2.0);
-// }
-// else if (m==0 && lx%2==0) {
-// exponent = k-lx/2;
-// s = pow(-1.0, exponent);
-// }
-// else {
-// s = 0.0;
-// }
-// s2 = s2 + n_over_k(j, k)*
-// n_over_k(abs(m),(lx-2*k))*s;
-// }
-// s1 = s1 + n_over_k(l,i)*n_over_k(i,j)*
-// pow(-1.0,i)*fact(2*l-2*i)/fact(l-abs(m)-2*i)*s2;
-// }
-// matrix[ m+l, c] =
-// sqrt(1.0*(fact(2*lx)*fact(2*ly)*fact(2*lz)*fact(l)*fact(l-abs(m))) /
-// (fact(lx)*fact(ly)*fact(lz)*fact(2*l)*fact(l+abs(m))))*
-// s1 / (pow(2.0, l)*fact(l));
-// }
-// else
-// matrix[ m+l, c] = 0.0;
-// }
-// }
-// }
-// return matrix;
-// }
-
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     // #[test]
     // fn test_CBF_normalize() {
     //   let mut cbf = CartesianBasisFunction {
