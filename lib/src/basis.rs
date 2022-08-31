@@ -18,7 +18,7 @@ impl Shell {
 }
 
 /// return sperical harmonicas basis dimension
-pub fn sdim(l: &u8) -> usize {
+pub fn dim(l: &u8) -> usize {
     usize::from(2 * l + 1)
 }
 
@@ -48,13 +48,25 @@ impl BasisShell {
     }
 
     /// return sperical harmonicas basis dimension
-    pub fn sdim(&self) -> usize {
-        sdim(&self.shell.l)
+    pub fn dim(&self) -> usize {
+        dim(&self.shell.l)
     }
 
     /// return cartesian basis dimension
     pub fn cdim(&self) -> usize {
         cdim(&self.shell.l)
+    }
+
+    // pub fn shell(&self) -> &Shell {
+    //     &self.shell
+    // }
+
+    pub fn l(&self) -> &u8 {
+        &self.shell.l
+    }
+
+    pub fn cbf(&self) -> &[CartesianBasisFunction] {
+        &self.cbf
     }
 
     fn generate_cartesian_shell(&mut self) {
@@ -77,7 +89,7 @@ impl BasisShell {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Basis {
     shells: Vec<BasisShell>,
 
@@ -113,23 +125,34 @@ impl Basis {
     }
 
     /// return sperical harmonicas basis dimension
-    pub fn sdim(self) -> usize {
-        self.shells.iter().map(|s| s.sdim()).sum()
+    pub fn dim(&self) -> usize {
+        self.shells.iter().map(|s| s.dim()).sum()
     }
 
     /// return sperical harmonicas basis dimension
-    pub fn cdim(self) -> usize {
+    pub fn cdim(&self) -> usize {
         self.shells.iter().map(|s| s.cdim()).sum()
     }
 
-    // fn offset(&self, sn: &usize) -> usize {
-    //     let mut offset = 0;
-    //     for i in 0..*sn {
-    //         offset += self.shells[i].dim();
-    //     }
-    //     offset
-    // }
-    //
+    pub fn shells(&self) -> &Vec<BasisShell> {
+        &self.shells
+    }
+
+    pub fn trafo_matrix(&self, l: &u8) -> &FMatrix {
+        match self.cartesian_to_sperical_trafo.get(l) {
+            Some(mat) => &mat,
+            None => panic!("No transformation matrix found for l = {}", l),
+        }
+    }
+
+    pub fn offset(&self, sn: usize) -> usize {
+        let mut offset = 0;
+        for i in 0..sn {
+            offset += self.shells[i].dim();
+        }
+        offset
+    }
+
     // fn coffset(&self, sn: &usize) -> usize {
     //     let mut offset = 0;
     //     for i in 0..*sn {
@@ -154,7 +177,7 @@ impl Basis {
         let l = i16::from(*lmax);
 
         let xyz = gaussian_layout(lmax);
-        let mut mat = FMatrix::zero(sdim(lmax), cdim(lmax));
+        let mut mat = FMatrix::zero(dim(lmax), cdim(lmax));
 
         for c in 0..cdim(lmax) {
             lx = xyz[c][0];
@@ -220,13 +243,44 @@ impl Basis {
 }
 
 #[derive(Clone)]
-struct CartesianBasisFunction {
-    pub origin: [f64; 3],
-    pub ml: [u8; 3],
+pub struct CartesianBasisFunction {
+    origin: [f64; 3],
+    ml: [u8; 3],
 
-    pub exps: Vec<f64>,
-    pub coefs: Vec<f64>,
-    pub norm: Vec<f64>,
+    exps: Vec<f64>,
+    coefs: Vec<f64>,
+    norm: Vec<f64>,
+}
+
+/// Getters
+impl CartesianBasisFunction {
+    pub fn origin(&self) -> &[f64; 3] {
+        &self.origin
+    }
+
+    pub fn ml(&self) -> &[u8; 3] {
+        &self.ml
+    }
+
+    pub fn ml_i16(&self) -> [i16; 3] {
+        [
+            i16::from(self.ml[0]),
+            i16::from(self.ml[1]),
+            i16::from(self.ml[2]),
+        ]
+    }
+
+    pub fn exps(&self) -> &[f64] {
+        &self.exps
+    }
+
+    pub fn coefs(&self) -> &[f64] {
+        &self.coefs
+    }
+
+    pub fn norm(&self) -> &[f64] {
+        &self.norm
+    }
 }
 
 impl CartesianBasisFunction {

@@ -73,6 +73,7 @@ impl Default for Molecule {
     }
 }
 
+#[derive(Clone)]
 pub struct Atom {
     el: Element,
     origin: [f64; 3],
