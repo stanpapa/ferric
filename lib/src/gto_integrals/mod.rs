@@ -5,3 +5,4 @@ mod nuclear_electron_attraction;
 pub mod nuclear_repulsion;
 pub mod one_electron;
 mod overlap;
+mod r;

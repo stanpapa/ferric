@@ -60,6 +60,7 @@ impl<T: Scalar> Matrix<T> {
 }
 
 // implement `Deref` so, elem can be accessed implicitly
+// todo: return slice (deal with lifetimes)
 impl<T: Scalar> Deref for Matrix<T> {
     type Target = Vec<T>;
 
@@ -207,7 +208,7 @@ impl<T: Scalar> Display for Matrix<T> {
 
         for i in 0..self.rows {
             for j in 0..self.cols {
-                write!(f, "{:12.8} ", self[(i, j)])?;
+                write!(f, "{:12.6} ", self[(i, j)])?;
             }
             writeln!(f)?;
         }

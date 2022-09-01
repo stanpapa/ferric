@@ -107,10 +107,10 @@ impl Atom {
     }
 }
 
-pub fn distance(a: &Atom, b: &Atom) -> f64 {
-    let dx = a.origin[0] - b.origin[0];
-    let dy = a.origin[1] - b.origin[1];
-    let dz = a.origin[2] - b.origin[2];
+pub fn distance(a: &[f64; 3], b: &[f64; 3]) -> f64 {
+    let dx = a[0] - b[0];
+    let dy = a[1] - b[1];
+    let dz = a[2] - b[2];
 
     (dx * dx + dy * dy + dz * dz).sqrt()
 }

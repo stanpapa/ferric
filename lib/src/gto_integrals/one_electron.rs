@@ -1,6 +1,7 @@
 use crate::basis::{cdim, dim, BasisShell, CartesianBasisFunction};
 use crate::gto_integrals::integral_interface::IntegralInterface;
 use crate::gto_integrals::kinetic_energy::kinetic_energy;
+use crate::gto_integrals::nuclear_electron_attraction::nuclear_electron_attraction;
 use crate::gto_integrals::overlap::overlap;
 use crate::math::matrix::FMatrix;
 
@@ -59,7 +60,15 @@ impl IntegralInterface {
                             &b.ml_i16(),
                             b.origin(),
                         ),
-                        OneElectronKernel::NuclearAttracton => 0.0,
+                        OneElectronKernel::NuclearAttracton => nuclear_electron_attraction(
+                            &a.exps()[ia],
+                            &a.ml_i16(),
+                            a.origin(),
+                            &b.exps()[ib],
+                            &b.ml_i16(),
+                            b.origin(),
+                            self.atoms(),
+                        ),
                         OneElectronKernel::Overlap => overlap(
                             &a.exps()[ia],
                             &a.ml_i16(),
