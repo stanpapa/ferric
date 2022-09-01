@@ -1,7 +1,7 @@
 use crate::basis::{Basis, Shell};
 use crate::geometry::Atom;
 
-pub fn load_sto_3g(atoms: &Vec<Atom>) -> Basis {
+pub fn load_sto_3g(atoms: &[Atom]) -> Basis {
     println!("Loading STO-3G basis set");
     const MAX_ATOMIC_NUMBER: usize = 8;
 

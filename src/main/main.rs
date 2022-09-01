@@ -1,5 +1,5 @@
 use ferric_lib::geometry::Molecule;
-use ferric_lib::gto_bases::sto_3g::load_sto_3g;
+use ferric_lib::gto_basis_sets::sto_3g::load_sto_3g;
 use ferric_lib::gto_integrals::integral_interface::IntegralInterface;
 use ferric_lib::gto_integrals::nuclear_repulsion::nuclear_repulsion;
 use ferric_lib::gto_integrals::one_electron::OneElectronKernel;

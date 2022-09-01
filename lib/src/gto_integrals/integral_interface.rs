@@ -7,7 +7,7 @@ pub struct IntegralInterface {
 }
 
 impl IntegralInterface {
-    pub fn new(basis: &Basis, atoms: &Vec<Atom>) -> IntegralInterface {
+    pub fn new(basis: &Basis, atoms: &[Atom]) -> IntegralInterface {
         Self {
             basis: basis.clone(),
             atoms: atoms.to_vec(),

@@ -1,3 +1,4 @@
+use crate::constants::_ANG_AU;
 use crate::elements::Element;
 use crate::elements::Element::{H, O};
 
@@ -34,20 +35,24 @@ impl Molecule {
         let num_electrons_beta = (num_electrons as usize - alpha_excess) / 2;
         let num_electrons_alpha = num_electrons as usize - num_electrons_beta;
 
-        Molecule {
+        let mut mol = Molecule {
             atoms,
             charge,
             multiplicity,
             num_electrons_alpha,
             num_electrons_beta,
-        }
+        };
+
+        mol.scale_coords(&_ANG_AU);
+
+        mol
     }
 
     pub fn num_atoms(&self) -> usize {
         self.atoms.len()
     }
 
-    pub fn atoms(&self) -> &Vec<Atom> {
+    pub fn atoms(&self) -> &[Atom] {
         &self.atoms
     }
 
@@ -101,8 +106,8 @@ impl Atom {
     // }
 
     pub fn scale_coords(&mut self, factor: &f64) {
-        for i in 0..3 {
-            self.origin[i] *= factor;
+        for c in &mut self.origin {
+            *c *= factor;
         }
     }
 }

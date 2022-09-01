@@ -1,7 +1,7 @@
 use crate::basis::{Basis, Shell};
 use crate::geometry::Atom;
 
-pub fn load_def2_tzvp(atoms: &Vec<Atom>) -> Basis {
+pub fn load_def2_tzvp(atoms: &[Atom]) -> Basis {
     println!("Loading def2-tzvp basis set");
     const MAX_ATOMIC_NUMBER: usize = 8;
 

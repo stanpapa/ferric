@@ -98,7 +98,7 @@ pub struct Basis {
 }
 
 impl Basis {
-    pub fn new(atoms: &Vec<Atom>, shells: Vec<Vec<Shell>>) -> Self {
+    pub fn new(atoms: &[Atom], shells: Vec<Vec<Shell>>) -> Self {
         let mut basis_shells: Vec<BasisShell> = Default::default();
         let mut l_max = 0;
         for atom in atoms {
