@@ -180,6 +180,12 @@ impl<T: Scalar> Matrix<T> {
             }
         }
     }
+
+    pub fn transposed(&self) -> Self {
+        let mut transposed = self.clone();
+        transposed.transpose();
+        transposed
+    }
 }
 
 // ---------------------------------------------------------------------
@@ -208,7 +214,7 @@ impl<T: Scalar> Display for Matrix<T> {
 
         for i in 0..self.rows {
             for j in 0..self.cols {
-                write!(f, "{:12.6} ", self[(i, j)])?;
+                write!(f, "{:14.9} ", self[(i, j)])?;
             }
             writeln!(f)?;
         }
