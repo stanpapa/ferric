@@ -288,17 +288,18 @@ impl CartesianBasisFunction {
         let l = self.ml[0];
         let m = self.ml[1];
         let n = self.ml[2];
-        let l_total: f64 = (l + m + n).into();
+        let l_total = f64::from(l + m + n);
 
         // have to cast to signed integer to prevent overflow when
         // either l, m, or n is 0
-        let f_ijk: f64 = ((2 * i32::from(l) - 1).factorial2()
-            * (2 * i32::from(m) - 1).factorial2()
-            * (2 * i32::from(n) - 1).factorial2()) as f64;
+        let f_ijk: f64 = ((2 * i16::from(l) - 1).factorial2()
+            * (2 * i16::from(m) - 1).factorial2()
+            * (2 * i16::from(n) - 1).factorial2()) as f64;
 
         for e in &self.exps {
             let norm_e =
-                2.0_f64.powf(2.0 * l_total + 1.5) * e.powf(l_total + 1.5) / f_ijk / PI.powf(1.5);
+                (2.0_f64.powf(2.0 * l_total + 1.5) * e.powf(l_total + 1.5) / f_ijk / PI.powf(1.5))
+                    .sqrt();
             self.norm.push(norm_e);
         }
 
@@ -353,8 +354,6 @@ fn gaussian_layout(l: &u8) -> Vec<[u8; 3]> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     // #[test]
     // fn test_CBF_normalize() {
     //   let mut cbf = CartesianBasisFunction {
