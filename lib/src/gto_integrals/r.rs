@@ -1,13 +1,13 @@
-fn boys(n: &i16, t: &f64) -> f64 {
+fn boys(n: i16, t: f64) -> f64 {
     let mut f;
 
     // ----------------------------------------------
     //   Upward recursion for large arguments
     //   ----------------------------------------------
-    if *t > 30.0 {
+    if t > 30.0 {
         let pi_sqrt = 0.88622692545275801365;
         f = pi_sqrt / t.sqrt();
-        for i in 1..=*n {
+        for i in 1..=n {
             f *= (f64::from(i) - 0.5) / t;
         }
     }
@@ -15,7 +15,7 @@ fn boys(n: &i16, t: &f64) -> f64 {
     //   Downward recursion for small arguments
     //   ----------------------------------------------
     else {
-        let pt5_pm = f64::from(*n) + 0.5;
+        let pt5_pm = f64::from(n) + 0.5;
         let mut term = 0.5 / pt5_pm;
         let mut sum = term;
         let accuracy = 1e-12;
@@ -38,13 +38,13 @@ fn boys(n: &i16, t: &f64) -> f64 {
 
 pub fn r(t: i16, u: i16, v: i16, n: i16, p: f64, p_origin: &[f64; 3], distance: &f64) -> f64 {
     let mut value = 0.0;
-    let pr2 = p * distance * distance;
 
     if t == 0 && u == 0 && v == 0 {
+        let pr2 = p * distance * distance;
         if n == 0 {
-            value += boys(&n, &pr2);
+            value += boys(n, pr2);
         } else {
-            value += (-2.0 * p).powf(n.into()) * boys(&n, &pr2);
+            value += (-2.0 * p).powf(n.into()) * boys(n, pr2);
         }
     } else if t == 0 && u == 0 {
         if v > 1 {

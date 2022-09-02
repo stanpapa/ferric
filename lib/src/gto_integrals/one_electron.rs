@@ -4,15 +4,16 @@ use crate::gto_integrals::kinetic_energy::kinetic_energy;
 use crate::gto_integrals::nuclear_electron_attraction::nuclear_electron_attraction;
 use crate::gto_integrals::overlap::overlap;
 use crate::math::matrix::FMatrix;
+use crate::math::matrix_symmetric::FMatrixSym;
 
 pub enum OneElectronKernel {
     Kinetic,
-    NuclearAttracton,
+    NuclearAttraction,
     Overlap,
 }
 
 impl IntegralInterface {
-    fn cartesian_to_sperical_transformation(
+    fn cartesian_to_spherical_transformation(
         &self,
         l_a: &u8,
         l_b: &u8,
@@ -60,7 +61,7 @@ impl IntegralInterface {
                             &b.ml_i16(),
                             b.origin(),
                         ),
-                        OneElectronKernel::NuclearAttracton => nuclear_electron_attraction(
+                        OneElectronKernel::NuclearAttraction => nuclear_electron_attraction(
                             &a.exps()[ia],
                             &a.ml_i16(),
                             a.origin(),
@@ -105,12 +106,12 @@ impl IntegralInterface {
             }
         }
 
-        self.cartesian_to_sperical_transformation(a.l(), b.l(), matrix_cartesian)
+        self.cartesian_to_spherical_transformation(a.l(), b.l(), matrix_cartesian)
     }
 
-    pub fn calc_one_electron_integral(&self, kernel: OneElectronKernel) -> FMatrix {
+    pub fn calc_one_electron_integral(&self, kernel: OneElectronKernel) -> FMatrixSym {
         let dim = self.basis().dim();
-        let mut one_electron_integral = FMatrix::zero(dim, dim);
+        let mut one_electron_integral = FMatrixSym::zero(dim);
 
         for i in 0..self.basis().shells().len() {
             for j in 0..=i {
@@ -127,8 +128,6 @@ impl IntegralInterface {
                 for a in 0..one_electron_sub_matrix.rows() {
                     for b in 0..one_electron_sub_matrix.cols() {
                         one_electron_integral[(a + offset_i, b + offset_j)] =
-                            one_electron_sub_matrix[(a, b)];
-                        one_electron_integral[(b + offset_j, a + offset_i)] =
                             one_electron_sub_matrix[(a, b)];
                     }
                 }

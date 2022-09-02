@@ -29,15 +29,19 @@ pub fn nuclear_electron_attraction(
     for t in 0..=(l_a + l_b) {
         for u in 0..=(m_a + m_b) {
             for v in 0..=(n_a + n_b) {
-                // eval = E(l1,l2,t,A[0]-B[0],a,b) * E(m1,m2,u,A[1]-B[1],a,b) * E(n1,n2,v,A[2]-B[2],a,b);
                 let eval = e(l_a, l_b, t, a_origin[0] - b_origin[0], a, b)
                     * e(m_a, m_b, u, a_origin[1] - b_origin[1], a, b)
                     * e(n_a, n_b, v, a_origin[2] - b_origin[2], a, b);
 
                 let mut rval = 0.0;
                 for atom in atoms {
+                    let pc = [
+                        p_origin[0] - atom.origin()[0],
+                        p_origin[1] - atom.origin()[1],
+                        p_origin[2] - atom.origin()[2],
+                    ];
                     let distance = distance(&p_origin, atom.origin());
-                    rval += f64::from(atom.z()) * r(t, u, v, 0, p, &p_origin, &distance);
+                    rval += f64::from(atom.z()) * r(t, u, v, 0, p, &pc, &distance);
                 }
 
                 val += eval * rval;
