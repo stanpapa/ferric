@@ -1,4 +1,5 @@
 use crate::math::scalar::Scalar;
+use std::fmt::{Display, Formatter};
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 pub type FVector = Vector<f64>;
@@ -116,6 +117,16 @@ impl<T: Scalar> Index<usize> for Vector<T> {
 impl<T: Scalar> IndexMut<usize> for Vector<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.elem[index]
+    }
+}
+
+impl<T: Scalar> Display for Vector<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for i in &self.elem {
+            writeln!(f, "{:14.9}", i)?;
+        }
+
+        Ok(())
     }
 }
 
