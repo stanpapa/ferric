@@ -48,12 +48,4 @@ pub fn check_mat_mat<T: Scalar>(s: &str, c: &Matrix<T>, a: &Matrix<T>, b: &Matri
     if c.rows() != a.rows() || c.cols() != b.cols() {
         panic!("[{}] Target not compatible.", s);
     }
-
-    if !c.is_ok() {
-        panic!("[{}] C is not OK.", s);
-    } else if !a.is_ok() {
-        panic!("[{}] A is not OK.", s);
-    } else if !b.is_ok() {
-        panic!("[{}] B is not OK.", s);
-    }
 }
