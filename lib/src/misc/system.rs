@@ -1,12 +1,10 @@
-use std::env;
 use std::error;
 use std::process::Command;
 
 // todo: create enum for binaries
 
 pub fn system_command(s: &str) -> Result<(), Box<dyn error::Error>> {
-    let current_dir = env::current_dir().expect("Current directory not found");
-    let command = format!("{}/target/debug/{}", current_dir.to_str().unwrap(), s);
+    let command = format!("{}", s);
 
     let output = Command::new(command)
         .output()
