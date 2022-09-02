@@ -140,7 +140,7 @@ impl<T: Scalar> Display for MatrixSym<T> {
 
         for i in 0..self.n {
             for j in 0..self.n {
-                write!(f, "{:12.8} ", self[(i, j)])?;
+                write!(f, "{:14.9} ", self[(i, j)])?;
             }
             writeln!(f)?;
         }
