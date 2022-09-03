@@ -12,25 +12,29 @@
 # Library
 
 ## Base
-- [ ] Build basis set framework
-- [ ] Initialize basis on atoms
+- [x] Build basis set framework
+- [x] Initialize basis on atoms
 - [ ] Define orbital struct
 
 ## Integrals
 - [x] Nuclear-nuclear repulsion energy
-- [ ] Overlap integral (S)
-- [ ] kinetic energy integral (T)
-- [ ] nuclear-electron attraction integral (V)
+- [x] Overlap integral (S)
+- [x] kinetic energy integral (T)
+- [x] nuclear-electron attraction integral (V)
 - [ ] ERIs
+- [ ] dipole
 
 ## Math
 - [x] Custom Matrix, Vector, MatrixContainer structs
-- [ ] Use BLAS (Accelerate)
+- [x] Use BLAS (Accelerate)
 - [ ] BLAS Level 1
 - [ ] BLAS Level 2
 - [ ] BLAS Level 3
 
-## Properties
+# Properties
 - [ ] Dipole
+
+# Theory
+- [ ] Write down equations used in documentation
 
 # GUI?

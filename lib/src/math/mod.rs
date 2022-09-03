@@ -7,6 +7,6 @@ pub mod matrix;
 pub mod matrix_container;
 pub mod matrix_symmetric;
 mod scalar;
-mod traits;
+pub mod traits;
 mod utils;
 pub mod vector;
