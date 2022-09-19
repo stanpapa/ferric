@@ -1,5 +1,5 @@
-use crate::basis::{Basis, Shell};
-use crate::geometry::Atom;
+use crate::geometry::atom::Atom;
+use crate::gto_basis_sets::basis::{Basis, Shell};
 
 pub fn load_def2_tzvp(atoms: &[Atom]) -> Basis {
     println!("Loading def2-tzvp basis set");

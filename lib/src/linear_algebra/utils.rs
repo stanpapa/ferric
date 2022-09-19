@@ -1,7 +1,7 @@
-use crate::math::matrix::Matrix;
-use crate::math::matrix_symmetric::MatrixSym;
-use crate::math::scalar::Scalar;
-use crate::math::vector::Vector;
+use crate::linear_algebra::matrix::Matrix;
+use crate::linear_algebra::matrix_symmetric::MatrixSym;
+use crate::linear_algebra::scalar::Scalar;
+use crate::linear_algebra::vector::Vector;
 
 pub fn check_vec_vec<T: Scalar>(s: &str, lhs: &Vector<T>, rhs: &Vector<T>) {
     if lhs.size() != rhs.size() {
@@ -16,7 +16,7 @@ pub fn check_vec_vec<T: Scalar>(s: &str, lhs: &Vector<T>, rhs: &Vector<T>) {
 }
 
 pub fn check_mat_vec<T: Scalar>(s: &str, lhs: &Matrix<T>, rhs: &Vector<T>) {
-    if lhs.cols() != rhs.size() {
+    if lhs.cols != rhs.size() {
         panic!("[{}] Incompatible dimensions.", s);
     }
 
@@ -28,7 +28,7 @@ pub fn check_mat_vec<T: Scalar>(s: &str, lhs: &Matrix<T>, rhs: &Vector<T>) {
 }
 
 pub fn check_mat_sym_vec<T: Scalar>(s: &str, lhs: &MatrixSym<T>, rhs: &Vector<T>) {
-    if lhs.cols() != rhs.size() {
+    if lhs.n != rhs.size() {
         panic!("[{}] Incompatible dimensions.", s);
     }
 
@@ -41,11 +41,11 @@ pub fn check_mat_sym_vec<T: Scalar>(s: &str, lhs: &MatrixSym<T>, rhs: &Vector<T>
 
 // C(i,j) = A(i,k) B(k,j)
 pub fn check_mat_mat<T: Scalar>(s: &str, c: &Matrix<T>, a: &Matrix<T>, b: &Matrix<T>) {
-    if a.cols() != b.rows() {
+    if a.cols != b.rows {
         panic!("[{}] Incompatible contraction dimension.", s);
     }
 
-    if c.rows() != a.rows() || c.cols() != b.cols() {
+    if c.rows != a.rows || c.cols != b.cols {
         panic!("[{}] Target not compatible.", s);
     }
 }

@@ -1,4 +1,4 @@
-use ferric_lib::geometry::Molecule;
+use ferric_lib::geometry::molecule::Molecule;
 use ferric_lib::gto_basis_sets::BasisSet;
 use ferric_lib::HFType;
 use std::env::Args;
@@ -10,13 +10,13 @@ use toml::Value;
 
 #[derive(Default)]
 pub struct FerricInput {
-    base_name: String,
+    pub base_name: String,
 
-    hf: HFType,
-    basis_set: BasisSet,
+    pub hf: HFType,
+    pub basis_set: BasisSet,
 
     // Geometry
-    mol: Molecule,
+    pub molecule: Molecule,
 }
 
 // todo: use Serialize/Deserialize?
@@ -50,18 +50,6 @@ impl FerricInput {
 
         ferric_input
     }
-
-    // pub fn base_name(&self) -> &str {
-    //     &self.base_name
-    // }
-
-    pub fn basis_set(&self) -> &BasisSet {
-        &self.basis_set
-    }
-
-    pub fn molecule(&self) -> &Molecule {
-        &self.mol
-    }
 }
 
 impl FerricInput {
@@ -83,6 +71,6 @@ impl FerricInput {
 
     pub fn parse_geometry(&mut self, value: &Value) {
         let table = Self::check_if_table(value);
-        self.mol = Molecule::from_table(table);
+        self.molecule = Molecule::from_table(table);
     }
 }

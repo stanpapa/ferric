@@ -1,33 +1,27 @@
-use crate::math::scalar::Scalar;
-use std::cmp::{max, min};
-use std::fmt::{Display, Formatter};
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign};
-use std::ops::{Deref, DerefMut};
+use crate::linear_algebra::scalar::Scalar;
+
+use std::{
+    cmp::{max, min},
+    fmt::{Display, Formatter},
+    fs::File,
+    io::prelude::*,
+    ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign},
+    ops::{Deref, DerefMut},
+};
+
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub type FMatrixSym = MatrixSym<f64>;
 pub type IMatrixSym = MatrixSym<i64>;
 
-/*
- * note: cannot use macros from forward_ref, because Matrix<T> does
- *       implement Copy...
- */
-
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct MatrixSym<T: Scalar> {
-    n: usize,
-    elem: Vec<T>,
+    pub n: usize,
+    data: Vec<T>,
 }
 
 // simple getters
 impl<T: Scalar> MatrixSym<T> {
-    pub fn rows(&self) -> usize {
-        self.n
-    }
-
-    pub fn cols(&self) -> usize {
-        self.n
-    }
-
     pub fn size(&self) -> usize {
         self.n * self.n
     }
@@ -37,7 +31,7 @@ impl<T: Scalar> MatrixSym<T> {
     }
 
     fn len(&self) -> usize {
-        self.elem.len()
+        self.data.len()
     }
 
     fn shape(&self) -> (usize, usize) {
@@ -53,20 +47,19 @@ impl<T: Scalar> MatrixSym<T> {
     }
 }
 
-// implement `Deref` so, elem can be accessed implicitly
+// implement `Deref` so, data can be accessed implicitly
 impl<T: Scalar> Deref for MatrixSym<T> {
-    type Target = Vec<T>;
+    type Target = [T];
 
     fn deref(&self) -> &Self::Target {
-        &self.elem
+        &self.data
     }
 }
 
-// WARNING: Do not change len of elem. That will break Vector
-// implement `DerefMut` so, elem can be accessed implicitly
+// implement `DerefMut` so, data can be accessed implicitly
 impl<T: Scalar> DerefMut for MatrixSym<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.elem
+        &mut self.data
     }
 }
 
@@ -90,7 +83,7 @@ impl<T: Scalar> MatrixSym<T> {
 
         MatrixSym::<T> {
             n,
-            elem: Vec::with_capacity(n * (n + 1) / 2),
+            data: Vec::with_capacity(n * (n + 1) / 2),
         }
     }
 
@@ -101,7 +94,7 @@ impl<T: Scalar> MatrixSym<T> {
 
         MatrixSym::<T> {
             n,
-            elem: vec![value; n * (n + 1) / 2],
+            data: vec![value; n * (n + 1) / 2],
         }
     }
 
@@ -112,7 +105,7 @@ impl<T: Scalar> MatrixSym<T> {
 
         Self {
             n,
-            elem: v.to_vec(),
+            data: v.to_vec(),
         }
     }
 
@@ -121,12 +114,12 @@ impl<T: Scalar> MatrixSym<T> {
     }
 
     pub fn init(&mut self, value: T) {
-        self.elem = vec![value; self.num_elements()];
+        self.data = vec![value; self.num_elements()];
     }
 
     // fn del(&mut self) {
     //     self.n = 0;
-    //     self.elem.clear();
+    //     self.data.clear();
     // }
 
     pub fn transpose(&mut self) {}
@@ -156,15 +149,15 @@ impl<T: Scalar> Display for MatrixSym<T> {
 impl<T: Scalar> Index<(usize, usize)> for MatrixSym<T> {
     type Output = T;
 
-    /// Calculates index position (=triangle number) and return correct element
-    /// Note: rather slow to calculate the index every time an element needs
+    /// Calculates index position (=triangle number) and return correct dataent
+    /// Note: rather slow to calculate the index every time an dataent needs
     /// to be accessed
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         let min = min(index.0, index.1);
         let max = max(index.0, index.1);
         let index = max * (max + 1) / 2 + min;
 
-        &self.elem[index]
+        &self.data[index]
     }
 }
 
@@ -174,7 +167,27 @@ impl<T: Scalar> IndexMut<(usize, usize)> for MatrixSym<T> {
         let max = max(index.0, index.1);
         let index = max * (max + 1) / 2 + min;
 
-        &mut self.elem[index]
+        &mut self.data[index]
+    }
+}
+
+impl<T: Scalar + Serialize + DeserializeOwned> MatrixSym<T> {
+    pub fn store(&self, name: &str) {
+        let mut buffer = File::create(name).expect("Unable to create file");
+        write!(
+            buffer,
+            "{}",
+            toml::to_string(self).expect("Unable to serialize MatrixSym")
+        )
+        .expect("Unable to write to file");
+    }
+
+    pub fn retrieve(name: &str) -> Self {
+        let mut file = File::open(name).expect("Unable to open file for reading");
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)
+            .expect("Unable to read file");
+        toml::from_str(&buffer).expect("Unable to deserialize MatrixSym")
     }
 }
 
@@ -287,7 +300,7 @@ macro_rules! mul_MatrixSym_scalar (
             }
 
             Self::Output {
-                elem: self.elem.into_iter().map(|v| v * rhs).collect(),
+                data: self.data.into_iter().map(|v| v * rhs).collect(),
                 ..self
             }
         }
@@ -312,7 +325,7 @@ macro_rules! mul_MatrixSym_scalar (
             }
 
             Self::Output {
-                elem: self.elem.iter().map(|v| v * rhs).collect(),
+                data: self.data.iter().map(|v| v * rhs).collect(),
                 ..*self
             }
         }
@@ -337,7 +350,7 @@ macro_rules! mul_MatrixSym_scalar (
             }
 
             Self::Output {
-                elem: rhs.elem.iter().map(|v| v * self).collect(),
+                data: rhs.data.iter().map(|v| v * self).collect(),
                 ..*rhs
             }
         }
@@ -362,7 +375,7 @@ macro_rules! mul_MatrixSym_scalar (
             }
 
             Self::Output {
-                elem: rhs.elem.iter().map(|v| v * self).collect(),
+                data: rhs.data.iter().map(|v| v * self).collect(),
                 ..*rhs
             }
         }
@@ -462,7 +475,7 @@ mod tests {
     fn new() {
         let mat = FMatrixSym {
             n: N,
-            elem: Vec::with_capacity(N2),
+            data: Vec::with_capacity(N2),
         };
 
         assert_eq!(mat, FMatrixSym::new(N));
@@ -472,7 +485,7 @@ mod tests {
     fn new_with_value() {
         let mat = FMatrixSym {
             n: N,
-            elem: vec![5.0; N2],
+            data: vec![5.0; N2],
         };
 
         assert_eq!(mat, FMatrixSym::new_with_value(N, 5.0));
@@ -489,7 +502,7 @@ mod tests {
     fn zero() {
         let mat = FMatrixSym {
             n: N,
-            elem: vec![0.0; N2],
+            data: vec![0.0; N2],
         };
 
         assert_eq!(mat, FMatrixSym::zero(N));
@@ -507,7 +520,7 @@ mod tests {
     fn index() {
         let mat = IMatrixSym {
             n: N,
-            elem: (0..N2 as i64).collect(),
+            data: (0..N2 as i64).collect(),
         };
 
         assert_eq!(mat[(3, 0)], 6);

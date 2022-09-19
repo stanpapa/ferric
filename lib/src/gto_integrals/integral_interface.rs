@@ -1,5 +1,10 @@
-use crate::basis::Basis;
-use crate::geometry::Atom;
+use crate::{
+    geometry::atom::Atom,
+    gto_basis_sets::basis::Basis,
+    gto_integrals::{one_electron::OneElectronKernel, two_electron::TwoElectronKernel},
+};
+
+use std::fs;
 
 pub struct IntegralInterface {
     basis: Basis,
@@ -23,5 +28,16 @@ impl IntegralInterface {
 
     pub fn atoms(&self) -> &[Atom] {
         &self.atoms
+    }
+}
+
+impl IntegralInterface {
+    pub fn remove(&self) {
+        for kernel in OneElectronKernel::iter() {
+            fs::remove_file(kernel.to_filename()).ok();
+        }
+        for kernel in TwoElectronKernel::iter() {
+            fs::remove_file(kernel.to_filename()).ok();
+        }
     }
 }

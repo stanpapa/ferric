@@ -1,14 +1,19 @@
-use crate::constants::_ANG_AU;
-use crate::elements::Element;
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
+use crate::{geometry::atom::Atom, linear_algebra::constants::_ANG_AU};
 
-use toml::value::{Table, Value};
+use std::{
+    fmt::{Display, Formatter},
+    fs::File,
+    io::prelude::*,
+};
 
+use serde::{Deserialize, Serialize};
+use toml::value::Table;
+
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct Molecule {
-    atoms: Vec<Atom>,
     charge: i8,
     multiplicity: u8,
+    atoms: Vec<Atom>,
     // num_electrons_alpha: usize,
     // num_electrons_beta: usize,
 }
@@ -39,9 +44,9 @@ impl Molecule {
         // let num_electrons_alpha = num_electrons as usize - num_electrons_beta;
 
         let mut mol = Molecule {
-            atoms,
             charge,
             multiplicity,
+            atoms,
             // num_electrons_alpha,
             // num_electrons_beta,
         };
@@ -83,75 +88,6 @@ impl Display for Molecule {
     }
 }
 
-#[derive(Clone)]
-pub struct Atom {
-    el: Element,
-    origin: [f64; 3],
-}
-
-impl Atom {
-    pub fn new(el: Element, origin: [f64; 3]) -> Self {
-        Self { el, origin }
-    }
-
-    pub fn z(&self) -> u8 {
-        self.el.atomic_number()
-    }
-
-    pub fn mass(&self) -> f32 {
-        self.el.mass()
-    }
-
-    pub fn origin(&self) -> &[f64; 3] {
-        &self.origin
-    }
-    //
-    // pub fn origin_mut(&mut self) -> &mut [f64; 3] {
-    //     &mut self.origin
-    // }
-
-    pub fn scale_coords(&mut self, factor: &f64) {
-        for c in &mut self.origin {
-            *c *= factor;
-        }
-    }
-}
-
-impl Display for Atom {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(
-            f,
-            "{}: {:14.9}  {:14.9} {:14.9}",
-            self.el, self.origin[0], self.origin[1], self.origin[2]
-        )
-    }
-}
-
-impl Atom {
-    fn from_array(value: &Value) -> Self {
-        match value.as_array() {
-            Some(array) => Atom {
-                el: Element::from_str(array[0].as_str().unwrap()).unwrap(),
-                origin: array[1..=3]
-                    .iter()
-                    .map(|v| v.as_float().expect("coordinate is not a float"))
-                    .collect::<Vec<f64>>()
-                    .try_into()
-                    .unwrap(),
-            },
-            None => panic!("Invalid atom array"),
-        }
-    }
-}
-
-pub fn distance(a: &[f64; 3], b: &[f64; 3]) -> f64 {
-    let dx = a[0] - b[0];
-    let dy = a[1] - b[1];
-    let dz = a[2] - b[2];
-
-    (dx * dx + dy * dy + dz * dz).sqrt()
-}
-
 impl Molecule {
     pub fn from_table(table: Table) -> Self {
         let mut charge = 0;
@@ -173,5 +109,86 @@ impl Molecule {
         }
 
         Self::new(coordinates, charge, mult)
+    }
+
+    pub fn store(&self, name: &str) {
+        let mut buffer =
+            File::create(name.to_owned() + ".molecule").expect("Unable to create file");
+        write!(
+            buffer,
+            "{}",
+            toml::to_string(self).expect("Unable to serialize Molecule")
+        )
+        .expect("Unable to write to file");
+    }
+
+    pub fn retrieve(name: &str) -> Self {
+        let mut file =
+            File::open(name.to_owned() + ".molecule").expect("Unable to open file for reading");
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)
+            .expect("Unable to read file");
+        toml::from_str(&buffer).expect("Unable to deserialize a Molecule")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::geometry::molecule::Atom;
+    use crate::geometry::molecule::Molecule;
+    use crate::misc::elements::Element;
+
+    #[test]
+    fn serialize_molecule() {
+        assert_eq!(
+            toml::to_string(&Molecule::new(
+                vec![
+                    Atom::new(Element::O, [0.1, 0.2, 3.0]),
+                    Atom::new(Element::H, [-3.3, -2.2, -1.1]),
+                ],
+                -1,
+                1
+            ))
+            .unwrap(),
+            r#"charge = -1
+multiplicity = 1
+
+[[atoms]]
+el = "O"
+origin = [0.18897261339212518, 0.37794522678425035, 5.669178401763755]
+
+[[atoms]]
+el = "H"
+origin = [-6.23609624194013, -4.157397494626754, -2.078698747313377]
+"#
+        );
+    }
+
+    #[test]
+    fn deserialize_molecule() {
+        assert_eq!(
+            toml::from_str::<Molecule>(
+                r#"charge = -1
+multiplicity = 1
+
+[[atoms]]
+el = "O"
+origin = [0.18897261339212518, 0.37794522678425035, 5.669178401763755]
+
+[[atoms]]
+el = "H"
+origin = [-6.23609624194013, -4.157397494626754, -2.078698747313377]
+"#
+            )
+            .unwrap(),
+            Molecule::new(
+                vec![
+                    Atom::new(Element::O, [0.1, 0.2, 3.0]),
+                    Atom::new(Element::H, [-3.3, -2.2, -1.1]),
+                ],
+                -1,
+                1
+            )
+        );
     }
 }

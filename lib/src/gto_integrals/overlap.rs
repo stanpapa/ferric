@@ -1,5 +1,5 @@
-use crate::constants::PI;
 use crate::gto_integrals::e::e;
+use crate::linear_algebra::constants::PI;
 
 pub fn overlap(
     a: &f64,

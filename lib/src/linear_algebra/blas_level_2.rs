@@ -1,9 +1,9 @@
-use crate::math::matrix::FMatrix;
-use crate::math::matrix_symmetric::FMatrixSym;
-use crate::math::utils::{check_mat_sym_vec, check_mat_vec, check_vec_vec};
-use crate::math::vector::FVector;
+use crate::linear_algebra::matrix::FMatrix;
+use crate::linear_algebra::matrix_symmetric::FMatrixSym;
+use crate::linear_algebra::utils::{check_mat_sym_vec, check_mat_vec, check_vec_vec};
+use crate::linear_algebra::vector::FVector;
 
-use blas::{dgemv, dspmv, dsymv};
+use cblas::{dgemv, dspmv, dsymv, Layout, Part, Transpose};
 
 // ---------------------------------------------------------------------
 // BLAS Level 2: Matrix Vector operations
@@ -41,77 +41,83 @@ use blas::{dgemv, dspmv, dsymv};
 // mul_matrix_vec!(f32, f64, i8, i16, i32, i64, u8, u16, u32, u64);
 
 impl FVector {
-    // y = alpha * A * x + beta * y
+    // y(m) = alpha * A(m,n) * x(n) + beta * y(m)
     pub fn dgemv(&mut self, transpose: bool, alpha: f64, a: &FMatrix, x: &FVector, beta: f64) {
         check_mat_vec("dgemv", a, x);
-        if a.rows() != self.size() {
+        if a.rows != self.size() {
             panic!("[dgemv] Matrix Vector product not compatible with y");
         }
 
-        let trans = {
-            if transpose {
-                b'T'
-            } else {
-                b'N'
-            }
+        let trans = if transpose {
+            Transpose::Ordinary
+        } else {
+            Transpose::None
         };
+
+        let m = self.size() as i32;
+        let n = x.size() as i32;
+        let lda = if transpose { m } else { n } as i32;
 
         unsafe {
             dgemv(
+                Layout::RowMajor,
                 trans,
-                a.rows() as i32,
-                a.cols() as i32,
+                m,
+                n,
                 alpha,
-                a.as_slice(),
-                a.rows() as i32,
-                x.as_slice(),
+                a,
+                lda,
+                x,
                 1,
                 beta,
-                self.as_mut_slice(),
+                self,
                 1,
             );
         }
     }
 
-    // y = alpha * A * x + beta * y
+    // y(n) = alpha * A(n,n) * x(n) + beta * y(n)
     pub fn dspmv(&mut self, alpha: f64, a: &FMatrixSym, x: &FVector, beta: f64) {
         check_vec_vec("dspmv", x, self);
         check_mat_sym_vec("dspmv", a, x);
 
         unsafe {
             dspmv(
-                b'L',
-                a.rows() as i32,
+                Layout::RowMajor,
+                Part::Lower,
+                a.n as i32,
                 alpha,
-                a.as_slice(),
-                x.as_slice(),
+                a,
+                x,
                 1,
                 beta,
-                self.as_mut_slice(),
+                self,
                 1,
             );
         }
     }
 
-    /// y = alpha * A * x + beta * y
+    /// y(n) = alpha * A(n,n) * x(n) + beta * y(n)
     /// Inferior to dspmv. Implemented for completeness' sake
-    pub fn dsymv(&mut self, alpha: f64, a: &FMatrixSym, x: &FVector, beta: f64) {
+    fn dsymv(&mut self, alpha: f64, a: &FMatrixSym, x: &FVector, beta: f64) {
         check_vec_vec("dsymv", x, self);
         check_mat_sym_vec("dsymv", a, x);
 
         let a_sym = FMatrix::from(a);
+        let n = self.size() as i32;
 
         unsafe {
             dsymv(
-                b'L',
-                a_sym.rows() as i32,
+                Layout::RowMajor,
+                Part::Lower,
+                n,
                 alpha,
-                a_sym.as_slice(),
-                a.rows() as i32,
-                x.as_slice(),
+                &a_sym,
+                n,
+                x,
                 1,
                 beta,
-                self.as_mut_slice(),
+                self,
                 1,
             );
         }
@@ -154,14 +160,21 @@ mod tests {
     //     assert_eq!(&a * &b, c)
     // }
 
-    use crate::math::matrix::FMatrix;
-    use crate::math::matrix_symmetric::FMatrixSym;
-    use crate::math::vector::FVector;
+    use crate::linear_algebra::matrix::FMatrix;
+    use crate::linear_algebra::matrix_symmetric::FMatrixSym;
+    use crate::linear_algebra::vector::FVector;
 
     #[test]
     fn dgemv() {
         // todo: a should have all different values
+        // todo: check transpose
         let a = FMatrix::new_with_value(M, N, 2.0);
+        for i in 0..a.rows {
+            for j in 0..a.cols {
+                println!("{:?}", &a[(i, j)] as *const _);
+            }
+        }
+
         let x = FVector::new_from_vec(&[-2.0, 3.0, -4.0]);
         let mut y = FVector::new_from_vec(&[1.0, 2.0, 3.0, 4.0]);
         y.dgemv(false, 2.0, &a, &x, 5.0);
@@ -172,7 +185,6 @@ mod tests {
     #[test]
     fn dspmv() {
         // todo: a should have all different values
-        // todo: fix: matrix vector product is wrong
         let a = FMatrixSym::new_with_value(N, 2.0);
         let x = FVector::new_from_vec(&[-2.0, 3.0, -4.0]);
         let mut y = FVector::new_from_vec(&[1.0, 2.0, 3.0]);
@@ -184,7 +196,6 @@ mod tests {
     #[test]
     fn dsymv() {
         // todo: a should have all different values
-        // todo: fix: matrix vector product is wrong
         let a = FMatrixSym::new_with_value(N, 2.0);
         let x = FVector::new_from_vec(&[-2.0, 3.0, -4.0]);
         let mut y = FVector::new_from_vec(&[1.0, 2.0, 3.0]);

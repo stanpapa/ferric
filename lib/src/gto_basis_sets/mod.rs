@@ -1,13 +1,14 @@
-use crate::basis::Basis;
-use crate::geometry::Atom;
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
-
+pub mod basis;
 mod def2_tzvp;
 mod sto_3g;
 
 use def2_tzvp::load_def2_tzvp;
 use sto_3g::load_sto_3g;
+
+use crate::geometry::atom::Atom;
+use basis::Basis;
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, PartialEq)]
@@ -33,13 +34,6 @@ impl Display for BasisSet {
     }
 }
 
-pub fn load_basis_set(basis_set: &BasisSet, atoms: &[Atom]) -> Basis {
-    match basis_set {
-        BasisSet::sto_3g => load_sto_3g(atoms),
-        BasisSet::def2_tzvp => load_def2_tzvp(atoms),
-    }
-}
-
 impl From<String> for BasisSet {
     fn from(s: String) -> Self {
         BasisSet::from_str(s.as_str()).unwrap()
@@ -57,6 +51,15 @@ impl FromStr for BasisSet {
         };
 
         Ok(basis)
+    }
+}
+
+/// Main function that loads the basis set from
+/// todo: only load basis for atoms present?
+pub fn load_basis_set(basis_set: &BasisSet, atoms: &[Atom]) -> Basis {
+    match basis_set {
+        BasisSet::sto_3g => load_sto_3g(atoms),
+        BasisSet::def2_tzvp => load_def2_tzvp(atoms),
     }
 }
 

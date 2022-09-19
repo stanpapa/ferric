@@ -1,7 +1,13 @@
-use crate::math::scalar::Scalar;
-use std::fmt::{Display, Formatter};
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Sub, SubAssign};
-use std::ops::{Deref, DerefMut};
+use crate::linear_algebra::scalar::Scalar;
+
+use std::{
+    fmt::{Display, Formatter},
+    fs::File,
+    io::prelude::*,
+    ops::{Add, AddAssign, Deref, DerefMut, Index, IndexMut, Mul, Sub, SubAssign},
+};
+
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub type FMatrix = Matrix<f64>;
 pub type IMatrix = Matrix<i64>;
@@ -21,32 +27,24 @@ pub type IMatrix = Matrix<i64>;
  *       implement Copy...
  */
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct Matrix<T: Scalar> {
-    rows: usize,
-    cols: usize,
-    elem: Vec<T>,
+    pub rows: usize,
+    pub cols: usize,
+    data: Vec<T>,
 }
 
 // simple getters
 impl<T: Scalar> Matrix<T> {
-    pub fn rows(&self) -> usize {
-        self.rows
-    }
-
-    pub fn cols(&self) -> usize {
-        self.cols
-    }
-
     pub fn size(&self) -> usize {
         self.rows * self.cols
     }
 
     fn len(&self) -> usize {
-        self.elem.len()
+        self.data.len()
     }
 
-    fn shape(&self) -> (usize, usize) {
+    pub fn shape(&self) -> (usize, usize) {
         (self.rows, self.cols)
     }
 
@@ -59,21 +57,20 @@ impl<T: Scalar> Matrix<T> {
     }
 }
 
-// implement `Deref` so, elem can be accessed implicitly
-// todo: return slice (deal with lifetimes)
+// implement `Deref` so, data can be accessed implicitly
 impl<T: Scalar> Deref for Matrix<T> {
-    type Target = Vec<T>;
+    // type Target = Vec<T>;
+    type Target = [T];
 
     fn deref(&self) -> &Self::Target {
-        &self.elem
+        &self.data
     }
 }
 
-// WARNING: Do not change len of elem. That will break Vector
-// implement `DerefMut` so, elem can be accessed implicitly
+// implement `DerefMut` so, data can be accessed implicitly
 impl<T: Scalar> DerefMut for Matrix<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.elem
+        &mut self.data
     }
 }
 
@@ -100,7 +97,7 @@ impl<T: Scalar> Matrix<T> {
         Matrix::<T> {
             rows,
             cols,
-            elem: Vec::with_capacity(rows * cols),
+            data: Vec::with_capacity(rows * cols),
         }
     }
 
@@ -114,7 +111,7 @@ impl<T: Scalar> Matrix<T> {
         Matrix::<T> {
             rows,
             cols,
-            elem: vec![value; rows * cols],
+            data: vec![value; rows * cols],
         }
     }
 
@@ -126,7 +123,7 @@ impl<T: Scalar> Matrix<T> {
         Self {
             rows,
             cols,
-            elem: v.to_vec(),
+            data: v.to_vec(),
         }
     }
 
@@ -135,13 +132,13 @@ impl<T: Scalar> Matrix<T> {
     }
 
     pub fn init(&mut self, value: T) {
-        self.elem = vec![value; self.size()];
+        self.data = vec![value; self.size()];
     }
 
     fn del(&mut self) {
         self.rows = 0;
         self.cols = 0;
-        self.elem.clear();
+        self.data.clear();
     }
 
     pub fn transpose(&mut self) {
@@ -175,7 +172,7 @@ impl<T: Scalar> Matrix<T> {
 
             for i in 0..self.rows {
                 for j in 0..self.cols {
-                    self.elem.push(mat[(j, i)]);
+                    self.data.push(mat[(j, i)]);
                 }
             }
         }
@@ -196,13 +193,13 @@ impl<T: Scalar> Index<(usize, usize)> for Matrix<T> {
     type Output = T;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
-        &self.elem[index.0 * self.cols + index.1]
+        &self.data[index.0 * self.cols + index.1]
     }
 }
 
 impl<T: Scalar> IndexMut<(usize, usize)> for Matrix<T> {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
-        &mut self.elem[index.0 * self.cols + index.1]
+        &mut self.data[index.0 * self.cols + index.1]
     }
 }
 
@@ -220,6 +217,79 @@ impl<T: Scalar> Display for Matrix<T> {
         }
 
         Ok(())
+    }
+}
+
+/// Iterators -> implement proper Iterator trait for rows, cols, diagonals
+impl<T: Scalar> Matrix<T> {
+    pub fn row(&self, row: usize) -> impl Iterator<Item = &T> {
+        if self.rows < row {
+            panic!("Row {} out of range. Number of rows is {}", row, self.rows);
+        }
+        (0..self.cols).map(move |col| &self[(row, col)])
+    }
+
+    // pub fn row_mut(&mut self, row: usize) -> impl Iterator<Item = &mut T> {
+    //     if self.rows < row {
+    //         panic!("Row {} out of range. Number of rows is {}", row, self.rows);
+    //     }
+    //     (0..self.cols).map(move |col| &mut self[(row, col)])
+    // }
+
+    pub fn col(&self, col: usize) -> impl Iterator<Item = &T> {
+        if self.cols < col {
+            panic!(
+                "Column {} out of range. Number of columns is {}",
+                col, self.cols
+            );
+        }
+        (0..self.rows).map(move |row| &self[(row, col)])
+    }
+
+    pub fn diagonal(&self) -> impl Iterator<Item = &T> {
+        if self.rows != self.cols {
+            panic!("Diagonals of non-square matrices is not supported");
+        }
+        (0..self.rows).map(move |n| &self[(n, n)])
+    }
+}
+
+impl<T: Scalar + Serialize + DeserializeOwned> Matrix<T> {
+    pub fn store(&self, name: &str) {
+        let mut buffer = File::create(name).expect("Unable to create file");
+        write!(
+            buffer,
+            "{}",
+            toml::to_string(self).expect("Unable to serialize Matrix")
+        )
+        .expect("Unable to write to file");
+    }
+
+    pub fn retrieve(name: &str) -> Self {
+        let mut file = File::open(name).expect("Unable to open file for reading");
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)
+            .expect("Unable to read file");
+        toml::from_str(&buffer).expect("Unable to deserialize Matrix")
+    }
+}
+
+impl<T: Scalar> Matrix<T> {
+    pub fn slice(
+        &self,
+        row_first: usize,
+        row_last: usize,
+        col_first: usize,
+        col_last: usize,
+    ) -> Matrix<T> {
+        // todo: make more idiomatic if possible
+        let mut mat = Self::zero(row_last - row_first + 1, col_last - col_first + 1);
+        for i in row_first..=row_last {
+            for j in col_first..=col_last {
+                mat[(i - row_first, j - col_first)] = self[(i, j)];
+            }
+        }
+        mat
     }
 }
 
@@ -332,7 +402,7 @@ macro_rules! mul_matrix_scalar (
             }
 
             Self::Output {
-                elem: self.elem.into_iter().map(|v| v * rhs).collect(),
+                data: self.data.into_iter().map(|v| v * rhs).collect(),
                 ..self
             }
         }
@@ -357,7 +427,7 @@ macro_rules! mul_matrix_scalar (
             }
 
             Self::Output {
-                elem: self.elem.iter().map(|v| v * rhs).collect(),
+                data: self.data.iter().map(|v| v * rhs).collect(),
                 ..*self
             }
         }
@@ -382,7 +452,7 @@ macro_rules! mul_matrix_scalar (
             }
 
             Self::Output {
-                elem: rhs.elem.iter().map(|v| v * self).collect(),
+                data: rhs.data.iter().map(|v| v * self).collect(),
                 ..*rhs
             }
         }
@@ -407,7 +477,7 @@ macro_rules! mul_matrix_scalar (
             }
 
             Self::Output {
-                elem: rhs.elem.iter().map(|v| v * self).collect(),
+                data: rhs.data.iter().map(|v| v * self).collect(),
                 ..*rhs
             }
         }
@@ -438,7 +508,7 @@ mul_matrix_scalar!(
 //             panic!("[Mul] Matrix is empty.");
 //         }
 //
-//         for x in &mut self.elem {
+//         for x in &mut self.data {
 //             *x *= *rhs;
 //         }
 //     }
@@ -532,7 +602,7 @@ mod tests {
         let mat = FMatrix {
             rows: N,
             cols: N,
-            elem: Vec::with_capacity(N2),
+            data: Vec::with_capacity(N2),
         };
 
         assert_eq!(mat, FMatrix::new(N, N));
@@ -543,7 +613,7 @@ mod tests {
         let mat = FMatrix {
             rows: N,
             cols: N,
-            elem: vec![5.0; N2],
+            data: vec![5.0; N2],
         };
 
         assert_eq!(mat, FMatrix::new_with_value(N, N, 5.0));
@@ -561,7 +631,7 @@ mod tests {
         let mat = FMatrix {
             rows: N,
             cols: N,
-            elem: vec![0.0; N2],
+            data: vec![0.0; N2],
         };
 
         assert_eq!(mat, FMatrix::zero(N, N));
@@ -580,7 +650,7 @@ mod tests {
         let mat = IMatrix {
             rows: N,
             cols: N,
-            elem: (0..N2 as i64).collect(),
+            data: (0..N2 as i64).collect(),
         };
 
         assert_eq!(mat[(3, 0)], 15);
@@ -592,14 +662,14 @@ mod tests {
         let mut mat = IMatrix {
             rows: 3,
             cols: 3,
-            elem: (0..9).collect(),
+            data: (0..9).collect(),
         };
         mat.transpose();
 
         let mat_ref = IMatrix {
             rows: 3,
             cols: 3,
-            elem: vec![0, 3, 6, 1, 4, 7, 2, 5, 8],
+            data: vec![0, 3, 6, 1, 4, 7, 2, 5, 8],
         };
 
         assert_eq!(mat, mat_ref);
@@ -608,14 +678,14 @@ mod tests {
         let mut mat = IMatrix {
             rows: 4,
             cols: 3,
-            elem: (0..12).collect(),
+            data: (0..12).collect(),
         };
         mat.transpose();
 
         let mat_ref = IMatrix {
             rows: 3,
             cols: 4,
-            elem: vec![0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11],
+            data: vec![0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11],
         };
 
         assert_eq!(mat, mat_ref);

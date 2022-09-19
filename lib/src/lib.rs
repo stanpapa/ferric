@@ -1,22 +1,22 @@
-pub mod basis;
-pub mod constants;
-mod elements;
+pub mod data;
 pub mod geometry;
 pub mod gto_basis_sets;
 pub mod gto_integrals;
-pub mod math;
+pub mod linear_algebra;
 pub mod misc;
-pub mod orbitals;
 
-extern crate blas;
+use serde::{Deserialize, Serialize};
+
 extern crate blas_src;
-extern crate lapack;
+extern crate cblas;
 extern crate lapack_src;
+extern crate lapacke;
 
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 // todo: move
+#[derive(Serialize, Deserialize)]
 pub enum HFType {
     RHF,
     UHF,
@@ -36,17 +36,6 @@ impl From<String> for HFType {
     }
 }
 
-impl Display for HFType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            HFType::RHF => write!(f, "RHF"),
-            HFType::UHF => write!(f, "UHF"),
-            HFType::ROHF => write!(f, "ROHF"),
-            HFType::CASSCF => write!(f, "CASSCF"),
-        }
-    }
-}
-
 impl FromStr for HFType {
     type Err = ();
 
@@ -60,5 +49,37 @@ impl FromStr for HFType {
         };
 
         Ok(hf)
+    }
+}
+
+impl Display for HFType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HFType::RHF => write!(f, "RHF"),
+            HFType::UHF => write!(f, "UHF"),
+            HFType::ROHF => write!(f, "ROHF"),
+            HFType::CASSCF => write!(f, "CASSCF"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::HFType;
+
+    #[test]
+    fn serialize() {
+        assert_eq!(toml::to_string(&HFType::RHF).unwrap(), r#""RHF""#);
+        assert_eq!(toml::to_string(&HFType::UHF).unwrap(), r#""UHF""#);
+        assert_eq!(toml::to_string(&HFType::ROHF).unwrap(), r#""ROHF""#);
+        assert_eq!(toml::to_string(&HFType::CASSCF).unwrap(), r#""CASSCF""#);
+    }
+
+    #[test]
+    fn deserialize() {
+        assert_eq!(r#""RHF""#, toml::to_string(&HFType::RHF).unwrap());
+        assert_eq!(r#""UHF""#, toml::to_string(&HFType::UHF).unwrap());
+        assert_eq!(r#""ROHF""#, toml::to_string(&HFType::ROHF).unwrap());
+        assert_eq!(r#""CASSCF""#, toml::to_string(&HFType::CASSCF).unwrap(),);
     }
 }

@@ -2,6 +2,8 @@
 pub mod blas_level_1;
 pub mod blas_level_2;
 pub mod blas_level_3;
+pub mod constants;
+pub mod diagonalize;
 pub mod functions;
 pub mod matrix;
 pub mod matrix_container;

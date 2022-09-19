@@ -1,4 +1,4 @@
-use crate::math::scalar::Scalar;
+use crate::linear_algebra::scalar::Scalar;
 use std::fmt::{Display, Formatter};
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
@@ -8,7 +8,7 @@ pub type IVector = Vector<i64>;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Vector<T: Scalar> {
     n: usize,
-    elem: Vec<T>,
+    data: Vec<T>,
 }
 
 // simple getter
@@ -18,7 +18,7 @@ impl<T: Scalar> Vector<T> {
     }
 
     fn len(&self) -> usize {
-        self.elem.len()
+        self.data.len()
     }
 
     pub fn is_ok(&self) -> bool {
@@ -38,7 +38,7 @@ impl<T: Scalar> Vector<T> {
 
         Vector::<T> {
             n,
-            elem: Vec::with_capacity(n),
+            data: Vec::with_capacity(n),
         }
     }
 
@@ -49,14 +49,14 @@ impl<T: Scalar> Vector<T> {
 
         Vector::<T> {
             n,
-            elem: vec![value; n],
+            data: vec![value; n],
         }
     }
 
     pub fn new_from_vec(v: &[T]) -> Self {
         Self {
             n: v.len(),
-            elem: v.to_vec(),
+            data: v.to_vec(),
         }
     }
 
@@ -65,7 +65,7 @@ impl<T: Scalar> Vector<T> {
     }
 
     pub fn init(&mut self, value: T) {
-        self.elem = vec![value; self.n];
+        self.data = vec![value; self.n];
     }
 
     // fn del(&mut self) {
@@ -87,18 +87,17 @@ impl<T: Scalar> Vector<T> {
 
 // implement `Deref` so, Vector<T>.iter() can be called
 impl<T: Scalar> Deref for Vector<T> {
-    type Target = Vec<T>;
+    type Target = [T];
 
     fn deref(&self) -> &Self::Target {
-        &self.elem
+        &self.data
     }
 }
 
-// WARNING: Do not change len of elem. That will break Vector
 // implement `DerefMut` so, Vector<T>.iter_mut() can be called
 impl<T: Scalar> DerefMut for Vector<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.elem
+        &mut self.data
     }
 }
 
@@ -110,19 +109,19 @@ impl<T: Scalar> Index<usize> for Vector<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
-        &self.elem[index]
+        &self.data[index]
     }
 }
 
 impl<T: Scalar> IndexMut<usize> for Vector<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.elem[index]
+        &mut self.data[index]
     }
 }
 
 impl<T: Scalar> Display for Vector<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for i in &self.elem {
+        for i in &self.data {
             writeln!(f, "{:14.9}", i)?;
         }
 
@@ -140,7 +139,7 @@ mod tests {
     fn new() {
         let vec = FVector {
             n: N,
-            elem: Vec::with_capacity(N),
+            data: Vec::with_capacity(N),
         };
 
         assert_eq!(vec, FVector::new(N));
@@ -150,7 +149,7 @@ mod tests {
     fn new_with_value() {
         let vec = FVector {
             n: N,
-            elem: vec![5.0; N],
+            data: vec![5.0; N],
         };
 
         assert_eq!(vec, FVector::new_with_value(N, 5.0));
@@ -160,7 +159,7 @@ mod tests {
     fn new_from_vec() {
         let vec = IVector {
             n: N,
-            elem: vec![0, 1, 2, 3, 4],
+            data: vec![0, 1, 2, 3, 4],
         };
 
         assert_eq!(vec, IVector::new_from_vec(&[0, 1, 2, 3, 4]));
@@ -170,7 +169,7 @@ mod tests {
     fn zero() {
         let vec = FVector {
             n: N,
-            elem: vec![0.0; N],
+            data: vec![0.0; N],
         };
 
         assert_eq!(vec, FVector::zero(N));
@@ -188,7 +187,7 @@ mod tests {
     fn index() {
         let vec = IVector {
             n: N,
-            elem: (0..5).collect(),
+            data: (0..5).collect(),
         };
 
         assert_eq!(vec[3], 3);

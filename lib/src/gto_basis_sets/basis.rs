@@ -1,10 +1,17 @@
-use crate::constants::PI;
-use crate::geometry::Atom;
-use crate::math::functions::{BinomialCoefficient, Factorial};
-use crate::math::matrix::FMatrix;
-use std::collections::HashMap;
+use crate::{
+    geometry::atom::Atom,
+    linear_algebra::{
+        constants::PI,
+        functions::{BinomialCoefficient, Factorial},
+        matrix::FMatrix,
+    },
+};
 
-#[derive(Clone, Default)]
+use std::{collections::HashMap, fs::File, io::prelude::*};
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Default, Serialize, Deserialize)]
 pub struct Shell {
     l: u8,
     exps: Vec<f64>,
@@ -27,7 +34,7 @@ pub fn cdim(l: &u8) -> usize {
     usize::from((l + 1) * (l + 2) / 2)
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct BasisShell {
     origin: [f64; 3],
     shell: Shell,
@@ -89,7 +96,7 @@ impl BasisShell {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Basis {
     shells: Vec<BasisShell>,
 
@@ -240,9 +247,28 @@ impl Basis {
 
         mat
     }
+
+    pub fn store(&self, name: &str) {
+        let mut buffer = File::create(name.to_owned() + ".basis").expect("Unable to create file");
+        write!(
+            buffer,
+            "{}",
+            toml::to_string(self).expect("Unable to serialize Basis")
+        )
+        .expect("Unable to write to file");
+    }
+
+    pub fn retrieve(name: &str) -> Self {
+        let mut file =
+            File::open(name.to_owned() + ".basis").expect("Unable to open file for reading");
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)
+            .expect("Unable to read file");
+        toml::from_str(&buffer).expect("Unable to deserialize a Basis")
+    }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CartesianBasisFunction {
     origin: [f64; 3],
     ml: [u8; 3],

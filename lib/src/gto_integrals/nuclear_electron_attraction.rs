@@ -1,8 +1,8 @@
-use crate::constants::PI;
-use crate::geometry::{distance, Atom};
+use crate::geometry::atom::Atom;
 use crate::gto_integrals::e::e;
 use crate::gto_integrals::r::r;
-use crate::math::functions::gaussian_product_center;
+use crate::linear_algebra::constants::PI;
+use crate::linear_algebra::functions::{distance, gaussian_product_center};
 
 pub fn nuclear_electron_attraction(
     a: &f64,

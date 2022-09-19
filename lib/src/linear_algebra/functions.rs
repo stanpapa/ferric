@@ -147,6 +147,14 @@ pub fn gaussian_product_center(
     product
 }
 
+pub fn distance(a: &[f64; 3], b: &[f64; 3]) -> f64 {
+    let dx = a[0] - b[0];
+    let dy = a[1] - b[1];
+    let dz = a[2] - b[2];
+
+    (dx * dx + dy * dy + dz * dz).sqrt()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,7 +1,9 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-#[derive(Clone, Debug, PartialEq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Element {
     H,
     He,
@@ -333,5 +335,20 @@ impl FromStr for Element {
         };
 
         Ok(el)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::misc::elements::Element;
+
+    #[test]
+    fn serialize() {
+        assert_eq!(toml::to_string(&Element::Bi).unwrap(), r#""Bi""#);
+    }
+
+    #[test]
+    fn deserialize() {
+        assert_eq!(toml::from_str::<Element>(r#""Bi""#).unwrap(), Element::Bi);
     }
 }

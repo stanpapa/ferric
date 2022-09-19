@@ -4,10 +4,12 @@
 
 # SCF program
 
-- [ ] Initial guess by diagonalizing H = T + V
+- [x] Initial guess by diagonalizing H = T + V
 - [ ] Construct Fock matrix 
 - [ ] SCF cycles
 - [ ] SCF energy
+- [ ] UHF
+- [ ] ROHF
 
 # Library
 
@@ -38,3 +40,7 @@
 - [ ] Write down equations used in documentation
 
 # GUI?
+
+# Symmetry
+
+# Time-Dependent HF

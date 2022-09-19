@@ -2,14 +2,15 @@
 // BLAS Level 1: Vector operations
 // ---------------------------------------------------------------------
 
-use crate::math::traits::{Dot, Norm};
-use crate::math::vector::FVector;
+use crate::linear_algebra::traits::{Dot, Norm};
+use crate::linear_algebra::vector::FVector;
 use std::ops::{AddAssign, MulAssign};
 
-use crate::math::matrix::FMatrix;
-use crate::math::matrix_symmetric::FMatrixSym;
-use crate::math::utils::check_vec_vec;
-use blas::*;
+use crate::linear_algebra::matrix::FMatrix;
+use crate::linear_algebra::matrix_symmetric::FMatrixSym;
+use crate::linear_algebra::utils::check_vec_vec;
+
+use cblas::*;
 
 /// todo:
 ///   [ ] DSWAP : swap x and y
@@ -305,25 +306,54 @@ impl AddAssign<&FVector> for FVector {
         check_vec_vec("AddAssign", self, rhs);
 
         unsafe {
-            daxpy(
-                self.size() as i32,
-                1.0,
-                rhs.as_slice(),
-                1,
-                self.as_mut_slice(),
-                1,
-            );
+            daxpy(self.size() as i32, 1.0, rhs, 1, self, 1);
         }
     }
 }
 
-impl Dot<f64> for FVector {
+impl Dot<FVector> for FVector {
     type Output = f64;
 
     fn dot(&self, rhs: &FVector) -> Self::Output {
         check_vec_vec("Dot", self, rhs);
 
-        unsafe { ddot(self.size() as i32, self.as_slice(), 1, rhs.as_slice(), 1) }
+        unsafe { ddot(self.size() as i32, self, 1, rhs, 1) }
+    }
+}
+
+impl Dot<FMatrix> for FMatrix {
+    type Output = f64;
+
+    fn dot(&self, rhs: &FMatrix) -> Self::Output {
+        if self.rows != rhs.rows {
+            panic!("[Dot] rows do not match");
+        }
+        if self.cols != rhs.cols {
+            panic!("[Dot] cols do not match");
+        }
+
+        unsafe { ddot(self.size() as i32, self, 1, rhs, 1) }
+    }
+}
+
+impl Dot<FMatrixSym> for FMatrix {
+    type Output = f64;
+
+    fn dot(&self, rhs: &FMatrixSym) -> Self::Output {
+        if self.rows != rhs.n {
+            panic!("[Dot] rows do not match");
+        }
+        if self.cols != rhs.n {
+            panic!("[Dot] cols do not match");
+        }
+
+        let mut dot = 0.0;
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                dot += self[(i, j)] * rhs[(i, j)];
+            }
+        }
+        dot
     }
 }
 
@@ -331,7 +361,15 @@ impl Norm for FVector {
     type Output = f64;
 
     fn norm(&self) -> Self::Output {
-        unsafe { dnrm2(self.size() as i32, self.as_slice(), 1) }
+        unsafe { dnrm2(self.size() as i32, self, 1) }
+    }
+}
+
+impl Norm for FMatrix {
+    type Output = f64;
+
+    fn norm(&self) -> Self::Output {
+        unsafe { dnrm2(self.size() as i32, self, 1) }
     }
 }
 
@@ -346,7 +384,7 @@ impl MulAssign<f64> for FVector {
 impl MulAssign<&f64> for FVector {
     fn mul_assign(&mut self, alpha: &f64) {
         unsafe {
-            dscal(self.size() as i32, *alpha, self.as_mut_slice(), 1);
+            dscal(self.size() as i32, *alpha, self, 1);
         }
     }
 }
@@ -362,7 +400,7 @@ impl MulAssign<f64> for FMatrix {
 impl MulAssign<&f64> for FMatrix {
     fn mul_assign(&mut self, alpha: &f64) {
         unsafe {
-            dscal(self.size() as i32, *alpha, self.as_mut_slice(), 1);
+            dscal(self.size() as i32, *alpha, self, 1);
         }
     }
 }
@@ -378,7 +416,7 @@ impl MulAssign<f64> for FMatrixSym {
 impl MulAssign<&f64> for FMatrixSym {
     fn mul_assign(&mut self, alpha: &f64) {
         unsafe {
-            dscal(self.num_elements() as i32, *alpha, self.as_mut_slice(), 1);
+            dscal(self.num_elements() as i32, *alpha, self, 1);
         }
     }
 }
@@ -388,24 +426,17 @@ impl FVector {
         check_vec_vec("axpy", self, x);
 
         unsafe {
-            daxpy(
-                self.size() as i32,
-                *alpha,
-                x.as_slice(),
-                1,
-                self.as_mut_slice(),
-                1,
-            );
+            daxpy(self.size() as i32, *alpha, x, 1, self, 1);
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::math::matrix::FMatrix;
-    use crate::math::matrix_symmetric::FMatrixSym;
-    use crate::math::traits::{Dot, Norm};
-    use crate::math::vector::FVector;
+    use crate::linear_algebra::matrix::FMatrix;
+    use crate::linear_algebra::matrix_symmetric::FMatrixSym;
+    use crate::linear_algebra::traits::{Dot, Norm};
+    use crate::linear_algebra::vector::FVector;
 
     const N: usize = 5;
 
