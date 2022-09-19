@@ -59,7 +59,7 @@ pub fn eri(
                                 * e(m_c, m_d, nu, c_origin[1] - d_origin[1], c, d)
                                 * e(n_c, n_d, phi, c_origin[2] - d_origin[2], c, d)
                                 * (-1.0_f64).powf(f64::from(tau + nu + phi))
-                                * r(t + tau, u 4+ nu, v + phi, 0, alpha, &pq_center, &r_pq);
+                                * r(t + tau, u + nu, v + phi, 0, alpha, &pq_center, &r_pq);
                         }
                     }
                 }
