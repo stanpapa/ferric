@@ -121,7 +121,6 @@ impl Basis {
         let mut cartesian_to_sperical_trafo = HashMap::<u8, FMatrix>::new();
         for l in 0..=l_max {
             cartesian_to_sperical_trafo.insert(l, Self::cartesian_spherical_transformation(&l));
-            println!("{}", cartesian_to_sperical_trafo.get(&l).unwrap());
         }
 
         Self {

@@ -23,6 +23,18 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     // hard-coded base name for now
     let molecule = Molecule::retrieve("input");
 
+    // calculate number of electrons and doubly occupied orbitals
+    let n_electrons: isize = molecule
+        .atoms()
+        .iter()
+        .map(|a| isize::from(a.z()))
+        .sum::<isize>()
+        - isize::from(molecule.charge);
+    if n_electrons <= 0 {
+        panic!("No electrons present");
+    }
+    let n_occ = n_electrons as usize / 2;
+
     // work-around until I figure out how to store the basis set on disk
     let basis = load_basis_set(&BasisSet::sto_3g, molecule.atoms());
     let integrals = IntegralInterface::new(&basis, molecule.atoms());
@@ -32,9 +44,6 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let h_core = FMatrixSym::retrieve(OneElectronKernel::HCore.to_filename());
     let s = FMatrixSym::retrieve(OneElectronKernel::Overlap.to_filename());
     let eri = integrals.calc_two_electron_integral(TwoElectronKernel::ERI); // todo: verify
-    for keys in eri.keys() {
-        println!("{:?}", keys);
-    }
 
     // --------------------------------
     // build orthogonalization matrix
@@ -71,7 +80,6 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     // println!("C0:\n{}", c); // verified aginst EasyIntegrals
 
     // construct initial density: Dμν = \sum_i^{n_occ} 2 Cμi Cνi^T
-    let n_occ = 5; // RHF H20
     let mut d = density(&c, &n_occ);
     // println!("d:\n{}", d); // verified aginst EasyIntegrals
 
@@ -79,9 +87,13 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let thresh = 1e-6;
     let mut ΔE;
     let mut e0 = 0.0;
-    println!("Iter {:^16} {:^16} {:^16}", "E", "ΔE", "[D,F]");
+    println!(
+        "Iter {:^16} {:^16} {:^16} {:^16}",
+        "E", "ΔE", "[D,F]", "D(rms)"
+    );
     for iter in 0..max_iter {
         ΔE = -e0;
+        let d_old = d.clone();
 
         // --------------------------------
         // construct new Fock matrix
@@ -98,11 +110,6 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         // --------------------------------
         ΔE += e0;
         let comm_norm = commutator_d_f(&d, &f, &s);
-        println!("{:3} {:16.9} {:16.9} {:16.9}", iter, e0, ΔE, comm_norm);
-        if ΔE.abs() < thresh {
-            println!("Converged!");
-            break;
-        }
 
         // --------------------------------
         // build new density
@@ -115,10 +122,29 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         c = &s12 * cprime;
         // 4. Compute density: Dμν = \sum_i^{n_occ} Cμi Cνi^T
         d = density(&c, &n_occ);
+
+        let rms = d_rms(&d, &d_old);
+        println!(
+            "{:3} {:16.9} {:16.9} {:16.9} {:16.9}",
+            iter, e0, ΔE, comm_norm, rms
+        );
+        if ΔE.abs() < thresh {
+            println!("Converged!\n");
+            break;
+        }
     }
 
-    // println!("Dmo:\n{}", c.transposed() * (&d * &c));
-    // println!("Fmo:\n{}", c.transposed() * (&f * &c));
+    println!("----------------");
+    println!("Total SCF Energy");
+    println!("----------------\n");
+    let e1 = h.dot(&d);
+    let e2 = e0 - e1 - nuclear_repulsion;
+    println!("Total Energy:        {:20.9} Eh\n", e0);
+    println!("Components:");
+    println!("Nuclear Repulsion:   {:20.9} Eh", nuclear_repulsion);
+    println!("Electronic Energy:   {:20.9} Eh", e0 - nuclear_repulsion);
+    println!("One Electron Energy: {:20.9} Eh", e1);
+    println!("Two Electron Energy: {:20.9} Eh", e2);
 
     Ok(())
 }
@@ -130,9 +156,8 @@ fn density(c: &FMatrix, n: &usize) -> FMatrix {
 }
 
 /// build RHF Fock matrix as
-///     Fμν = Hμν + \sum_{ρσ} Dρσ^{i-1} [ (μν|ρσ) - 0.5 (μρ|νσ) ]
-// fn fock(h: &FMatrix, d: &FMatrix, eri: &FMatrixSymContainer) -> FMatrix {
-fn fock(h: &FMatrix, d: &FMatrix, eri: &FMatrixContainer) -> FMatrix {
+///     Fμν = Hμν + \sum_{ρσ} Dρσ [ (μν|ρσ) - 0.5 (μρ|νσ) ]
+fn fock(h: &FMatrix, d: &FMatrix, eri: &FMatrixSymContainer) -> FMatrix {
     let mut f = h.clone();
     let dim = f.rows;
 
@@ -163,7 +188,8 @@ fn fock(h: &FMatrix, d: &FMatrix, eri: &FMatrixContainer) -> FMatrix {
 
 /// Calculate RHF energy as: E0 = 0.5 \sum_{μν} Dμν ( Hμν + Fμν )
 fn energy(d: &FMatrix, h: &FMatrix, f: &FMatrix) -> f64 {
-    0.5 * d.dot(h) + d.dot(f)
+    let x = h + f;
+    0.5 * d.dot(&x)
 }
 
 /// calculate || [D,F] || with
@@ -173,4 +199,15 @@ fn commutator_d_f(d: &FMatrix, f: &FMatrix, s: &FMatrixSym) -> f64 {
     let mut commutator = &s_mat * (d * f);
     commutator -= f * (d * s_mat);
     commutator.norm()
+}
+
+fn d_rms(d: &FMatrix, d_old: &FMatrix) -> f64 {
+    let mut rms = 0.0;
+    let dim = d.rows;
+    for μ in 0..dim {
+        for ν in 0..dim {
+            rms += (d[(μ, ν)] - d_old[(μ, ν)]).powi(2);
+        }
+    }
+    rms.sqrt()
 }

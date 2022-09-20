@@ -5,9 +5,9 @@
 # SCF program
 
 - [x] Initial guess by diagonalizing H = T + V
-- [ ] Construct Fock matrix 
-- [ ] SCF cycles
-- [ ] SCF energy
+- [x] Construct Fock matrix 
+- [x] SCF cycles
+- [x] SCF energy
 - [ ] UHF
 - [ ] ROHF
 
@@ -23,7 +23,7 @@
 - [x] Overlap integral (S)
 - [x] kinetic energy integral (T)
 - [x] nuclear-electron attraction integral (V)
-- [ ] ERIs
+- [x] ERIs
 - [ ] dipole
 
 ## Math

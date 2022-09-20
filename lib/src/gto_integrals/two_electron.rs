@@ -28,18 +28,14 @@ impl TwoElectronKernel {
 
 impl IntegralInterface {
     // pub fn calc_two_electron_integral(&self, kernel: TwoElectronKernel) {
-    // pub fn calc_two_electron_integral(&self, kernel: TwoElectronKernel) -> FMatrixSymContainer {
-    pub fn calc_two_electron_integral(&self, kernel: TwoElectronKernel) -> FMatrixContainer {
+    pub fn calc_two_electron_integral(&self, kernel: TwoElectronKernel) -> FMatrixSymContainer {
         let dim = self.basis().dim();
-        // let mut two_electron_integral = FMatrixSymContainer::new();
-        let mut two_electron_integral = FMatrixContainer::new();
+        let mut two_electron_integral = FMatrixSymContainer::new();
 
         for i in 0..self.basis().shells().len() {
-            for j in 0..self.basis().shells().len() {
-                // for j in 0..=i {
+            for j in 0..=i {
                 for k in 0..self.basis().shells().len() {
-                    // for l in 0..=k {
-                    for l in 0..self.basis().shells().len() {
+                    for l in 0..=k {
                         let integral_sub = self.calc_two_electron_shell(
                             &kernel,
                             &self.basis().shells()[i],
@@ -52,25 +48,18 @@ impl IntegralInterface {
                         let offset_j = self.basis().offset(j);
                         let offset_k = self.basis().offset(k);
                         let offset_l = self.basis().offset(l);
-                        // println!("i, j, k, l: {}, {}, {}, {}", i, j, k, l);
-                        // println!("offset");
-                        // println!(
-                        //     "i, j, k, l: {}, {}, {}, {}\n==============",
-                        //     offset_i, offset_j, offset_k, offset_l
-                        // );
 
                         for ab in integral_sub.keys() {
                             let ab_offset = (ab.0 + offset_i, ab.1 + offset_j);
 
-                            // // only keep lower triangle
-                            // if ab_offset.0 < ab_offset.1 {
-                            //     continue;
-                            // }
+                            // only keep lower triangle
+                            if ab_offset.0 < ab_offset.1 {
+                                continue;
+                            }
 
                             let tmp = two_electron_integral
                                 .entry(&ab_offset)
-                                .or_insert_with(|| FMatrix::zero(dim, dim));
-                            // .or_insert_with(|| FMatrixSym::zero(dim));
+                                .or_insert_with(|| FMatrixSym::zero(dim));
 
                             // an entry exists at ab, so it can be safely retrieved
                             let sub = &integral_sub[*ab];

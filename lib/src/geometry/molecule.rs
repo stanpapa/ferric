@@ -11,8 +11,8 @@ use toml::value::Table;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct Molecule {
-    charge: i8,
-    multiplicity: u8,
+    pub charge: i8,
+    pub multiplicity: u8,
     atoms: Vec<Atom>,
     // num_electrons_alpha: usize,
     // num_electrons_beta: usize,
