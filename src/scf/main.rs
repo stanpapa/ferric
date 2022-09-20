@@ -59,7 +59,6 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 
     // construct S-1/2 = L Λ-1/2 L^T
     let s12 = &eigenvectors * (lambda_12 * eigenvectors.transposed());
-    // println!("S^(-1/2):\n{}", s12); // verified aginst EasyIntegrals
 
     // --------------------------------
     // build initial guess density
@@ -69,19 +68,15 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     // todo implement FMatrixSym * FMatrix
     let h = FMatrix::from(h_core);
     let f = &s12 * (&h * &s12);
-    // println!("h:\n{}", h); // verified aginst EasyIntegrals
-    // println!("F0:\n{}", f); // verified aginst EasyIntegrals
 
     // diagonalize F': C'^T F' C' = eps
     let (_eps, cprime) = f.diagonalize_sym();
 
     // transform eigenvectors into original (non-orthogonal basis)
     let mut c = &s12 * cprime;
-    // println!("C0:\n{}", c); // verified aginst EasyIntegrals
 
     // construct initial density: Dμν = \sum_i^{n_occ} 2 Cμi Cνi^T
     let mut d = density(&c, &n_occ);
-    // println!("d:\n{}", d); // verified aginst EasyIntegrals
 
     let max_iter = 20;
     let thresh = 1e-6;
