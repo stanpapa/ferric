@@ -1,7 +1,7 @@
 This is a quantum chemistry program written in Rust for fun and educational purposes
 
 Features:
-- [x] Absolutely none
+- [x] RHF energies
 
 
 How to build:
