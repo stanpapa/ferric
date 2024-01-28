@@ -12,6 +12,7 @@
 - [ ] ROHF
 
 # Library
+- [ ] HDF5 support instead of TOML
 
 ## Base
 - [x] Build basis set framework

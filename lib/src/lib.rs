@@ -12,11 +12,13 @@ extern crate cblas;
 extern crate lapack_src;
 extern crate lapacke;
 
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
+use std::{
+    fmt::{Display, Formatter},
+    str::FromStr,
+};
 
 // todo: move
-#[derive(Serialize, Deserialize)]
+#[derive(PartialEq, Serialize, Deserialize)]
 pub enum HFType {
     RHF,
     UHF,

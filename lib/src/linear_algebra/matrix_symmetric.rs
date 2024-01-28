@@ -89,7 +89,7 @@ impl<T: Scalar> MatrixSym<T> {
 
     pub fn new_with_value(n: usize, value: T) -> MatrixSym<T> {
         if n <= 0 {
-            panic!("Cannot allocate MatrixSym with rows <= 0");
+            panic!("Cannot allocate MatrixSym with {} rows", n);
         }
 
         MatrixSym::<T> {

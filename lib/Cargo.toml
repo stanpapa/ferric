@@ -6,8 +6,11 @@ edition = "2021"
 
 #[features]
 #default = ["openblas"]
-#openblas = ["openblas"]
-#intel-mkl = ["intel-mkl"]
+#openblas = ["openblas-system"]
+#intel-mkl = ["intel-mkl-system"]
+#
+#openblas-system= ["openblas-src/system"]
+#intel-mkl-system= ["intel-mkl-src/mkl-dynamic-lp64-seq"]
 
 
 [dependencies]
@@ -17,8 +20,13 @@ serde = { version = "1.0", features = ["derive"] }
 
 # BLAS and LAPACK
 cblas = "0.4.0"
-#blas-src = { version = "0.8", features = ["intel-mkl"] }
-blas-src = { version = "0.8", features = ["openblas"] }
 lapacke = "0.5.0"
-#lapack-src = { version = "0.8", features = ["intel-mkl"] }
-lapack-src = { version = "0.8", features = ["openblas"] }
+#blas-src = { version = "0.8.0", features = ["openblas"] }
+#lapack-src = { version = "0.8.0", features = ["openblas"] }
+blas-src = { version = "0.8.0", features = ["intel-mkl"] }
+lapack-src = { version = "0.8.0", features = ["intel-mkl"] }
+
+#[dependencies.intel-mkl-src]
+#version = "0.8.1"
+#features = ["mkl-dynamic-lp64-seq"]
+#

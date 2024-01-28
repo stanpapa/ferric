@@ -9,8 +9,8 @@ use toml::value::Value;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Atom {
-    el: Element,
-    origin: [f64; 3],
+    pub el: Element,
+    pub origin: [f64; 3],
 }
 
 impl Atom {
@@ -25,14 +25,6 @@ impl Atom {
     pub fn mass(&self) -> f32 {
         self.el.mass()
     }
-
-    pub fn origin(&self) -> &[f64; 3] {
-        &self.origin
-    }
-    //
-    // pub fn origin_mut(&mut self) -> &mut [f64; 3] {
-    //     &mut self.origin
-    // }
 
     pub fn scale_coords(&mut self, factor: &f64) {
         for c in &mut self.origin {

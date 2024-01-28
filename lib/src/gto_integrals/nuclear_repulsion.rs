@@ -7,8 +7,7 @@ pub fn nuclear_repulsion(mol: &[Atom]) -> f64 {
     let mut vnn = 0.0;
     for i in 0..n {
         for j in 0..i {
-            vnn +=
-                mol[i].z() as f64 * mol[j].z() as f64 / distance(mol[i].origin(), mol[j].origin());
+            vnn += mol[i].z() as f64 * mol[j].z() as f64 / distance(&mol[i].origin, &mol[j].origin);
         }
     }
 

@@ -3,7 +3,7 @@ use crate::gto_basis_sets::basis::{Basis, Shell};
 
 pub fn load_sto_3g(atoms: &[Atom]) -> Basis {
     println!("Loading STO-3G basis set");
-    const MAX_ATOMIC_NUMBER: usize = 8;
+    const MAX_ATOMIC_NUMBER: usize = 53;
 
     let mut shells: Vec<Vec<Shell>> = vec![Default::default(); MAX_ATOMIC_NUMBER + 1];
 
@@ -190,24 +190,6 @@ pub fn load_sto_3g(atoms: &[Atom]) -> Basis {
         vec![0.1559162700, 0.6076837200, 0.3919573900],
     ));
 
-    // // Basis function S
-    // BG[ 10][  0].l     = 0;
-    // BG[ 10][  0].ng    = 3;
-    // BG[ 10][  0].a[ 0] =           207.0156100000;   BG[ 10][  0].d[ 0] =             0.1543289700;
-    // BG[ 10][  0].a[ 1] =            37.7081510000;   BG[ 10][  0].d[ 1] =             0.5353281400;
-    // BG[ 10][  0].a[ 2] =            10.2052970000;   BG[ 10][  0].d[ 2] =             0.4446345400;
-    // // Basis function S
-    // BG[ 10][  1].l     = 0;
-    // BG[ 10][  1].ng    = 3;
-    // BG[ 10][  1].a[ 0] =             8.2463151000;   BG[ 10][  1].d[ 0] =            -0.0999672300;
-    // BG[ 10][  1].a[ 1] =             1.9162662000;   BG[ 10][  1].d[ 1] =             0.3995128300;
-    // BG[ 10][  1].a[ 2] =             0.6232293000;   BG[ 10][  1].d[ 2] =             0.7001154700;
-    // // Basis function P
-    // BG[ 10][  2].l     = 1;
-    // BG[ 10][  2].ng    = 3;
-    // BG[ 10][  2].a[ 0] =             8.2463151000;   BG[ 10][  2].d[ 0] =             0.1559162700;
-    // BG[ 10][  2].a[ 1] =             1.9162662000;   BG[ 10][  2].d[ 1] =             0.6076837200;
-    // BG[ 10][  2].a[ 2] =             0.6232293000;   BG[ 10][  2].d[ 2] =
     // ----------------------------
     // Element #10, Neon
     // ----------------------------

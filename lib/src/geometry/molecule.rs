@@ -9,46 +9,56 @@ use std::{
 use serde::{Deserialize, Serialize};
 use toml::value::Table;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 pub struct Molecule {
+    // basic information regarding a molecule (input)
     pub charge: i8,
     pub multiplicity: u8,
+
+    // number of electrons (calculated)
+    // #[serde(skip_serializing)]
+    pub n_electrons: usize,
+    // #[serde(skip_serializing)]
+    pub n_electrons_alpha: usize,
+    // #[serde(skip_serializing)]
+    pub n_electrons_beta: usize,
+
     atoms: Vec<Atom>,
-    // num_electrons_alpha: usize,
-    // num_electrons_beta: usize,
 }
 
 impl Molecule {
     pub fn new(atoms: Vec<Atom>, charge: i8, multiplicity: u8) -> Molecule {
-        // let mut num_electrons: i8 = -charge;
-        // num_electrons += atoms.iter().map(|a| a.z()).sum::<u8>() as i8;
-        //
-        // if num_electrons <= 0 {
-        //     panic!("Invalid charge of {}.", charge);
-        // }
-        //
-        // // Mult = 2Ms + 1 thus the number of unpaired electrons (taken as α) is Mult-1 = 2Ms
-        // let alpha_excess = multiplicity as usize - 1;
-        //
-        // // the number of β electrons must be equal the number of doubly occupied orbitals
-        // // Ndo = (nelec - n_of_unpaired_elec)/2 this must be an integer
-        // // if isodd(num_electrons) != isodd(alpha_excess) {
-        // if (num_electrons % 2 == 0) && (alpha_excess % 2 == 1) {
-        //     panic!(
-        //         "Incompatible charge {} and multiplicity {}",
-        //         charge, multiplicity
-        //     );
-        // }
-        //
-        // let num_electrons_beta = (num_electrons as usize - alpha_excess) / 2;
-        // let num_electrons_alpha = num_electrons as usize - num_electrons_beta;
+        // calculate number of electrons
+        let n_electrons: isize =
+            atoms.iter().map(|a| isize::from(a.z())).sum::<isize>() - isize::from(charge);
+
+        if n_electrons <= 0 {
+            panic!("Invalid charge of {}. No electrons present", charge);
+        }
+
+        // Mult = 2Ms + 1 thus the number of unpaired electrons (taken as α) is Mult-1 = 2Ms
+        let alpha_excess = usize::from(multiplicity) - 1;
+
+        // the number of β electrons must be equal the number of doubly occupied orbitals
+        // Ndo = (nelec - n_of_unpaired_elec)/2 this must be an integer
+        if (n_electrons % 2 == 1) && (multiplicity % 2 == 1) {
+            panic!(
+                "Both multiplicity ({}) and number of electrons ({}) are odd, which is impossible",
+                multiplicity, n_electrons
+            );
+        }
+        let n_electrons = n_electrons as usize;
+
+        let n_electrons_beta = (n_electrons - alpha_excess) / 2;
+        let n_electrons_alpha = n_electrons - n_electrons_beta;
 
         let mut mol = Molecule {
             charge,
             multiplicity,
             atoms,
-            // num_electrons_alpha,
-            // num_electrons_beta,
+            n_electrons,
+            n_electrons_alpha,
+            n_electrons_beta,
         };
 
         mol.scale_coords(&_ANG_AU);
@@ -68,13 +78,6 @@ impl Molecule {
         for atom in &mut self.atoms {
             atom.scale_coords(factor);
         }
-    }
-}
-
-// of course, the default molecule has to be H2O
-impl Default for Molecule {
-    fn default() -> Self {
-        Self::new(vec![], 0, 0)
     }
 }
 

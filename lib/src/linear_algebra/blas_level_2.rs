@@ -44,7 +44,7 @@ impl FVector {
     // y(m) = alpha * A(m,n) * x(n) + beta * y(m)
     pub fn dgemv(&mut self, transpose: bool, alpha: f64, a: &FMatrix, x: &FVector, beta: f64) {
         check_mat_vec("dgemv", a, x);
-        if a.rows != self.size() {
+        if a.rows != self.n {
             panic!("[dgemv] Matrix Vector product not compatible with y");
         }
 
@@ -54,8 +54,8 @@ impl FVector {
             Transpose::None
         };
 
-        let m = self.size() as i32;
-        let n = x.size() as i32;
+        let m = self.n as i32;
+        let n = x.n as i32;
         let lda = if transpose { m } else { n } as i32;
 
         unsafe {
@@ -104,7 +104,7 @@ impl FVector {
         check_mat_sym_vec("dsymv", a, x);
 
         let a_sym = FMatrix::from(a);
-        let n = self.size() as i32;
+        let n = self.n as i32;
 
         unsafe {
             dsymv(

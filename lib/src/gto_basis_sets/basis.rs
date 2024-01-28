@@ -110,7 +110,7 @@ impl Basis {
         let mut l_max = 0;
         for atom in atoms {
             for shell in &shells[atom.z() as usize] {
-                basis_shells.push(BasisShell::new(*atom.origin(), shell.clone()));
+                basis_shells.push(BasisShell::new(atom.origin.clone(), shell.clone()));
                 if shell.l > l_max {
                     l_max = shell.l;
                 }

@@ -9,6 +9,8 @@ use std::{
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+// use hdf5::H5Type;
+
 pub type FMatrix = Matrix<f64>;
 pub type IMatrix = Matrix<i64>;
 
@@ -59,7 +61,6 @@ impl<T: Scalar> Matrix<T> {
 
 // implement `Deref` so, data can be accessed implicitly
 impl<T: Scalar> Deref for Matrix<T> {
-    // type Target = Vec<T>;
     type Target = [T];
 
     fn deref(&self) -> &Self::Target {
@@ -252,6 +253,14 @@ impl<T: Scalar> Matrix<T> {
         }
         (0..self.rows).map(move |n| &self[(n, n)])
     }
+
+    // todo: get this to work
+    // pub fn diagonal_mut(&mut self) -> impl Iterator<Item = &mut T> {
+    //     if self.rows != self.cols {
+    //         panic!("Diagonals of non-square matrices is not supported");
+    //     }
+    //     (0..self.rows).map(move |n| &mut self[(n, n)])
+    // }
 }
 
 impl<T: Scalar + Serialize + DeserializeOwned> Matrix<T> {

@@ -7,22 +7,18 @@ pub type IVector = Vector<i64>;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Vector<T: Scalar> {
-    n: usize,
+    pub n: usize,
     data: Vec<T>,
 }
 
 // simple getter
 impl<T: Scalar> Vector<T> {
-    pub fn size(&self) -> usize {
-        self.n
-    }
-
     fn len(&self) -> usize {
         self.data.len()
     }
 
     pub fn is_ok(&self) -> bool {
-        self.size() == self.len()
+        self.n == self.len()
     }
 
     pub fn is_empty(&self) -> bool {

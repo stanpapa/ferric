@@ -306,7 +306,7 @@ impl AddAssign<&FVector> for FVector {
         check_vec_vec("AddAssign", self, rhs);
 
         unsafe {
-            daxpy(self.size() as i32, 1.0, rhs, 1, self, 1);
+            daxpy(self.n as i32, 1.0, rhs, 1, self, 1);
         }
     }
 }
@@ -317,7 +317,7 @@ impl Dot<FVector> for FVector {
     fn dot(&self, rhs: &FVector) -> Self::Output {
         check_vec_vec("Dot", self, rhs);
 
-        unsafe { ddot(self.size() as i32, self, 1, rhs, 1) }
+        unsafe { ddot(self.n as i32, self, 1, rhs, 1) }
     }
 }
 
@@ -361,7 +361,7 @@ impl Norm for FVector {
     type Output = f64;
 
     fn norm(&self) -> Self::Output {
-        unsafe { dnrm2(self.size() as i32, self, 1) }
+        unsafe { dnrm2(self.n as i32, self, 1) }
     }
 }
 
@@ -384,7 +384,7 @@ impl MulAssign<f64> for FVector {
 impl MulAssign<&f64> for FVector {
     fn mul_assign(&mut self, alpha: &f64) {
         unsafe {
-            dscal(self.size() as i32, *alpha, self, 1);
+            dscal(self.n as i32, *alpha, self, 1);
         }
     }
 }
@@ -426,7 +426,7 @@ impl FVector {
         check_vec_vec("axpy", self, x);
 
         unsafe {
-            daxpy(self.size() as i32, *alpha, x, 1, self, 1);
+            daxpy(self.n as i32, *alpha, x, 1, self, 1);
         }
     }
 }

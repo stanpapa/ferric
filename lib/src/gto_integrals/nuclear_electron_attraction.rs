@@ -36,11 +36,11 @@ pub fn nuclear_electron_attraction(
                 let mut rval = 0.0;
                 for atom in atoms {
                     let pc = [
-                        p_origin[0] - atom.origin()[0],
-                        p_origin[1] - atom.origin()[1],
-                        p_origin[2] - atom.origin()[2],
+                        p_origin[0] - atom.origin[0],
+                        p_origin[1] - atom.origin[1],
+                        p_origin[2] - atom.origin[2],
                     ];
-                    let distance = distance(&p_origin, atom.origin());
+                    let distance = distance(&p_origin, &atom.origin);
                     rval += f64::from(atom.z()) * r(t, u, v, 0, p, &pc, &distance);
                 }
 

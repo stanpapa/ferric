@@ -1,7 +1,6 @@
-use crate::linear_algebra::matrix::Matrix;
-use crate::linear_algebra::matrix_symmetric::MatrixSym;
-use crate::linear_algebra::scalar::Scalar;
-use crate::linear_algebra::vector::Vector;
+use crate::linear_algebra::{
+    matrix::Matrix, matrix_symmetric::MatrixSym, scalar::Scalar, vector::Vector,
+};
 
 pub trait Dot<T> {
     type Output;
