@@ -6,7 +6,7 @@ use ferric_lib::linear_algebra::{
 
 /// build Fock matrix as
 ///     RHF: Fμν = Hμν + \sum_{ρσ} Dρσ [ (μν|ρσ) - 0.5 (μρ|νσ) ]
-///     UHF: Fμν = Hμν + \sum_{ρσ} Dρσ [ (μν|ρσ) - (μρ|νσ) ]
+///     UHF: Fμν = Hμν + \sum_{ρσ} Dρσ [ 2 (μν|ρσ) - (μρ|νσ) ]
 pub fn fock(h: &FMatrix, d: &[FMatrix; 2], eri: &FMatrixSymContainer) -> [FMatrix; 2] {
     let uhf = d[1].rows > 0;
 
@@ -53,7 +53,7 @@ fn fock_rhf(h: &FMatrix, d: &FMatrix, eri: &FMatrixSymContainer) -> FMatrix {
 }
 
 /// build Fock matrix as
-///     UHF: Fμν = Hμν + \sum_{ρσ} Dρσ [ (μν|ρσ) - (μρ|νσ) ]
+///     UHF: Fμν = Hμν + \sum_{ρσ} Dρσ [ 2 (μν|ρσ) - (μρ|νσ) ]
 fn fock_uhf(h: &FMatrix, d: &[FMatrix; 2], eri: &FMatrixSymContainer) -> [FMatrix; 2] {
     let dim = h.rows;
 
@@ -84,7 +84,7 @@ fn fock_uhf(h: &FMatrix, d: &[FMatrix; 2], eri: &FMatrixSymContainer) -> [FMatri
         }
     }
 
-    let f_a = h.clone() + j_a - k_a;
+    let f_a = h.clone() + 2.0 * j_a - k_a;
 
     // -----------------------
     // beta
@@ -113,7 +113,7 @@ fn fock_uhf(h: &FMatrix, d: &[FMatrix; 2], eri: &FMatrixSymContainer) -> [FMatri
         }
     }
 
-    let f_b = h.clone() + j_b - k_b;
+    let f_b = h.clone() + 2.0 * j_b - k_b;
 
     [f_a, f_b]
 }
