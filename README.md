@@ -2,6 +2,7 @@ This is a quantum chemistry program written in Rust for fun and educational purp
 
 Features:
 - [x] RHF energies
+- [x] UHF energies
 
 
 How to build:

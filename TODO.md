@@ -8,7 +8,7 @@
 - [x] Construct Fock matrix 
 - [x] SCF cycles
 - [x] SCF energy
-- [ ] UHF
+- [x] UHF
 - [ ] ROHF
 
 # Library
@@ -18,6 +18,7 @@
 - [x] Build basis set framework
 - [x] Initialize basis on atoms
 - [ ] Define orbital struct
+- [ ] `.mwfn` support (?)
 
 ## Integrals
 - [x] Nuclear-nuclear repulsion energy
