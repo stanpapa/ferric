@@ -1,6 +1,6 @@
-use ferric_lib::geometry::molecule::Molecule;
-use ferric_lib::gto_basis_sets::BasisSet;
-use ferric_lib::HFType;
+use libferric::geometry::molecule::Molecule;
+use libferric::gto_basis_sets::BasisSet;
+use libferric::HFType;
 use std::env::Args;
 use std::fs;
 use std::str::FromStr;

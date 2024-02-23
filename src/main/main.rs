@@ -1,7 +1,7 @@
 mod input;
 use input::FerricInput;
 
-use ferric_lib::{
+use libferric::{
     gto_basis_sets::load_basis_set,
     gto_integrals::{
         integral_interface::IntegralInterface, one_electron::OneElectronKernel,

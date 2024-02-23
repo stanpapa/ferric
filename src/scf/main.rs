@@ -8,7 +8,7 @@ use crate::rhf::RHFSolver;
 use crate::solver::HFSolver;
 use crate::uhf::UHFSolver;
 
-use ferric_lib::{
+use libferric::{
     geometry::molecule::Molecule,
     gto_basis_sets::{load_basis_set, BasisSet},
     gto_integrals::{

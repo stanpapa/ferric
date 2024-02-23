@@ -1,4 +1,4 @@
-use ferric_lib::HFType;
+use libferric::HFType;
 
 pub struct SCFInput {
     // HF type

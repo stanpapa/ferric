@@ -1,12 +1,12 @@
-use ferric_lib::geometry::molecule::Molecule;
-use ferric_lib::gto_integrals::nuclear_repulsion::nuclear_repulsion;
-use ferric_lib::linear_algebra::constants::_AU_EV;
-use ferric_lib::linear_algebra::diagonalize::Diagonalize;
-use ferric_lib::linear_algebra::matrix_symmetric::FMatrixSym;
-use ferric_lib::linear_algebra::power::Power;
-use ferric_lib::linear_algebra::traits::Dot;
-use ferric_lib::linear_algebra::vector::FVector;
-use ferric_lib::linear_algebra::{matrix::FMatrix, matrix_container::FMatrixSymContainer};
+use libferric::geometry::molecule::Molecule;
+use libferric::gto_integrals::nuclear_repulsion::nuclear_repulsion;
+use libferric::linear_algebra::constants::_AU_EV;
+use libferric::linear_algebra::diagonalize::Diagonalize;
+use libferric::linear_algebra::matrix_symmetric::FMatrixSym;
+use libferric::linear_algebra::power::Power;
+use libferric::linear_algebra::traits::Dot;
+use libferric::linear_algebra::vector::FVector;
+use libferric::linear_algebra::{matrix::FMatrix, matrix_container::FMatrixSymContainer};
 
 use crate::diis::DIIS;
 use crate::fock::fock;

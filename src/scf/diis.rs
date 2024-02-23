@@ -1,4 +1,4 @@
-use ferric_lib::linear_algebra::{
+use libferric::linear_algebra::{
     linear_solve::LinearSolve, matrix::FMatrix, matrix_symmetric::FMatrixSym, traits::Dot,
     vector::FVector,
 };

@@ -1,4 +1,4 @@
-use ferric_lib::{
+use libferric::{
     geometry::molecule::Molecule,
     linear_algebra::{
         matrix::FMatrix, matrix_container::FMatrixSymContainer, matrix_symmetric::FMatrixSym,

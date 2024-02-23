@@ -18,7 +18,7 @@ path = "src/scf/main.rs"
 
 [dependencies]
 toml = "*"
-ferric-lib =  { path = "lib" }
+libferric = { path = "lib" }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 #forward_ref = "1.0.0"
