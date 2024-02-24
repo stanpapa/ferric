@@ -297,7 +297,7 @@ impl Display for Element {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}",
+            "{:2}",
             match self {
                 Element::H => "H",
                 Element::He => "He",

@@ -37,7 +37,7 @@ impl Display for Atom {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         writeln!(
             f,
-            "{}: {:14.9}  {:14.9} {:14.9}",
+            "{} {:>14.9} {:>14.9} {:>14.9}",
             self.el, self.origin[0], self.origin[1], self.origin[2]
         )
     }
