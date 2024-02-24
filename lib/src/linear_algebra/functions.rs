@@ -115,11 +115,8 @@ impl BinomialCoefficient for $t {
     type Output = usize;
 
     fn binomial_coefficient(&self, k: &Self) -> Self::Output {
-        if *self < 0 || *k < 0 {
-            panic!("n or k is smaller than 0!");
-        }
-        if k > self {
-            panic!("k is larger than n!");
+        if *k < 0 || k > self {
+            return 0;
         }
 
         (1..=*k).map(|i| (*self + 1 - i) / i).product::<$t>() as usize
