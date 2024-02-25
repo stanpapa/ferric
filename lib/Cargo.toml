@@ -7,13 +7,11 @@ edition = "2021"
 [dependencies]
 # input/output parsing
 toml = "*"
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "*"
 
 # BLAS and LAPACK
 cblas = "0.4.0"
 lapacke = "0.5.0"
-#blas-src = { version = "0.8.0", features = ["openblas"] }
-#lapack-src = { version = "0.8.0", features = ["openblas"] }
-blas-src = { version = "0.8.0", features = ["intel-mkl"] }
-lapack-src = { version = "0.8.0", features = ["intel-mkl"] }
+blas-src = { version = "0.10.0", features = ["openblas"] }
+lapack-src = { version = "0.10.0", features = ["openblas"] }
