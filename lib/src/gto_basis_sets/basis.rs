@@ -5,13 +5,18 @@ use crate::{
         functions::{BinomialCoefficient, Factorial},
         matrix::FMatrix,
     },
+    misc::elements::Element,
 };
 
-use std::{collections::HashMap, fs::File, io::prelude::*};
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap},
+    fs::File,
+    io::prelude::*,
+};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Shell {
     l: u8,
     exps: Vec<f64>,
@@ -24,7 +29,7 @@ impl Shell {
     }
 }
 
-/// return sperical harmonicas basis dimension
+/// return sperical harmonics basis dimension
 pub fn dim(l: &u8) -> usize {
     usize::from(2 * l + 1)
 }
@@ -34,7 +39,7 @@ pub fn cdim(l: &u8) -> usize {
     usize::from((l + 1) * (l + 2) / 2)
 }
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct BasisShell {
     origin: [f64; 3],
     shell: Shell,
@@ -167,7 +172,8 @@ impl Basis {
     //     offset
     // }
 
-    /// Cartesian to spherical harmenics transformation matrix
+    /// Cartesian to spherical harmonics transformation matrix
+    /// https://doi.org/10.1002/qua.560540202
     fn cartesian_spherical_transformation(lmax: &u8) -> FMatrix {
         // cartesian components
         let mut lx: u8;
@@ -265,9 +271,163 @@ impl Basis {
             .expect("Unable to read file");
         toml::from_str(&buffer).expect("Unable to deserialize a Basis")
     }
+
+    /// Print shell and contraction layout for each unique element present in the calculation
+    /// similar to how ORCA prints it
+    pub fn print_layout(&self, atoms: &[Atom]) {
+        // list of unique elements
+        let elements: BTreeSet<Element> = atoms.iter().map(|atom| atom.el.clone()).collect();
+
+        // find a coordinate for each element to read basis set data from
+        let origins = elements
+            .iter()
+            .map(|el| {
+                for atom in atoms {
+                    if *el == atom.el {
+                        return atom.origin;
+                    }
+                }
+                panic!("Could not find an atom corresponding to {}", el);
+            })
+            .collect::<Vec<[f64; 3]>>();
+
+        // initialise shell layout maps
+        // for each element map the angular momentum to the number of primitives
+        let mut primitives: BTreeMap<Element, BTreeMap<u8, Vec<u8>>> = elements
+            .iter()
+            .map(|el| (el.clone(), BTreeMap::<u8, Vec<u8>>::new()))
+            .collect();
+        // for each element map the angular momentum to the number of contracted functions
+        let mut contracted: BTreeMap<Element, BTreeMap<u8, u8>> = elements
+            .iter()
+            .map(|el| (el.clone(), BTreeMap::<u8, u8>::new()))
+            .collect();
+
+        // construct shell layout maps
+        let mut count = 0;
+        for el in &elements {
+            // construct list of basis shells corresponding to the current element
+            let shells: Vec<BasisShell> = self
+                .shells
+                .iter()
+                .filter(|shell| shell.origin == origins[count])
+                .map(|shell| shell.clone())
+                .collect();
+
+            // fill layout
+            for shell in shells {
+                contracted
+                    .get_mut(&el)
+                    .unwrap()
+                    .entry(*shell.l())
+                    .and_modify(|counter| *counter += 1)
+                    .or_insert(1);
+                primitives
+                    .get_mut(&el)
+                    .unwrap()
+                    .entry(*shell.l())
+                    .and_modify(|pattern| pattern.push(shell.shell.coefs.len() as u8))
+                    .or_insert(vec![shell.shell.coefs.len() as u8]);
+            }
+
+            count += 1;
+        }
+
+        // print banner
+        println!(
+            r#"
+---------------------
+BASIS SET INFORMATION
+---------------------
+"#
+        );
+
+        // map numerical value of l to orbital label s,p,d,f, etc.
+        let labels: HashMap<u8, &str> = vec![(0, "s"), (1, "p"), (2, "d"), (3, "f")]
+            .into_iter()
+            .collect();
+
+        // for each unique element present shell layout
+        for el in &elements {
+            println!(
+                "{el} {} contracted to {} pattern {{{}}}",
+                primitives
+                    .get(el)
+                    .unwrap()
+                    .iter()
+                    .map(|(l, pattern)| format!(
+                        "{}{}",
+                        pattern.iter().map(|&i| i as usize).sum::<usize>(),
+                        labels.get(l).unwrap()
+                    ))
+                    .collect::<String>(),
+                contracted
+                    .get(el)
+                    .unwrap()
+                    .iter()
+                    .map(|(l, n)| format!("{n}{}", labels.get(l).unwrap()))
+                    .collect::<String>(),
+                primitives
+                    .get(el)
+                    .unwrap()
+                    .iter()
+                    .map(|(_, pattern)| pattern.iter().map(|p| p.to_string()).collect::<String>())
+                    .collect::<Vec<String>>()
+                    .join("/")
+            );
+        }
+    }
+
+    /// Print basis set information in ORCA format
+    pub fn print_orca(&self, atoms: &[Atom]) {
+        // list of unique elements
+        let elements: BTreeSet<Element> = atoms.iter().map(|atom| atom.el.clone()).collect();
+
+        // map numerical value of l to orbital label s,p,d,f, etc.
+        let labels: HashMap<u8, &str> = vec![(0, "S"), (1, "P"), (2, "D"), (3, "F")]
+            .into_iter()
+            .collect();
+
+        // print banner
+        println!(
+            r#"
+------------------------
+BASIS SET IN ORCA FORMAT
+------------------------
+"#
+        );
+
+        // for each unique element present print basis set information
+        for element in &elements {
+            println!("# Basis set for element : {element}");
+            println!("NewGTO {element}");
+
+            // iterate over atoms until we find one that matches the current element
+            for atom in atoms {
+                if *element == atom.el {
+                    for shell in &self.shells {
+                        // dangerous to do float comparison?
+                        if atom.origin != shell.origin {
+                            continue;
+                        }
+
+                        // print shell
+                        let s = &shell.shell;
+                        println!("{} {}", labels.get(&s.l).unwrap(), s.coefs.len());
+                        for i in 0..s.coefs.len() {
+                            println!(" {:2}  {:17.10} {:17.10}", i + 1, s.exps[i], s.coefs[i]);
+                        }
+                    }
+
+                    break;
+                }
+            }
+            println!(" end;\n")
+        }
+    }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CartesianBasisFunction {
     origin: [f64; 3],
     ml: [u8; 3],

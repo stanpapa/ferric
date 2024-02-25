@@ -121,7 +121,6 @@ impl HFSolver for RHFSolver {
             // construct new Fock matrix
             // --------------------------------
             self.fock(h, eri);
-            // println!("F\n{}", f[0]);
 
             // --------------------------------
             // calculate HF energy

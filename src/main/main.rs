@@ -30,8 +30,13 @@ fn main() {
     // read input file
     let input = FerricInput::new(&mut args());
 
+    input.molecule.print(libferric::geometry::Unit::Ångström);
+    input.molecule.print(libferric::geometry::Unit::AtomicUnits);
+
     // initialize basis set
     let basis = load_basis_set(&input.basis_set, input.molecule.atoms());
+    basis.print_layout(input.molecule.atoms());
+    basis.print_orca(input.molecule.atoms());
 
     // store stuff on disk
     input.molecule.store(&input.base_name);
