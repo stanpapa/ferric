@@ -1,6 +1,6 @@
-use libferric::geometry::molecule::Molecule;
+use libferric::geometry::Geometry;
 use libferric::gto_integrals::nuclear_repulsion::nuclear_repulsion;
-use libferric::linear_algebra::constants::_AU_EV;
+use libferric::linear_algebra::constants::AU_EV;
 use libferric::linear_algebra::diagonalize::Diagonalize;
 use libferric::linear_algebra::matrix_symmetric::FMatrixSym;
 use libferric::linear_algebra::power::Power;
@@ -24,9 +24,9 @@ pub struct UHFSolver {
 }
 
 impl UHFSolver {
-    pub fn new(c: &[FMatrix; 2], molecule: &Molecule) -> Self {
-        let homo = [molecule.n_electrons_alpha, molecule.n_electrons_beta];
-        let nuclear_repulsion = nuclear_repulsion(molecule.atoms());
+    pub fn new(c: &[FMatrix; 2], geometry: &Geometry) -> Self {
+        let homo = [geometry.n_electrons_alpha, geometry.n_electrons_beta];
+        let nuclear_repulsion = nuclear_repulsion(geometry.molecule.atoms());
         Self {
             c: [c[0].clone(), c[1].clone()],
             f: [
@@ -192,6 +192,7 @@ impl HFSolver for UHFSolver {
 
         self.print_energy(h);
     }
+
     fn print_energy(&self, h: &FMatrix) {
         println!("----------------");
         println!("Total SCF Energy");
@@ -202,21 +203,21 @@ impl HFSolver for UHFSolver {
         println!(
             "Total Energy:        {:20.9}  {:20.5}\n",
             self.e,
-            self.e * _AU_EV
+            self.e * AU_EV
         );
         println!("Components:");
         println!(
             "Nuclear Repulsion:   {:20.9}  {:20.5}",
             self.nuclear_repulsion,
-            self.nuclear_repulsion * _AU_EV
+            self.nuclear_repulsion * AU_EV
         );
         println!(
             "Electronic Energy:   {:20.9}  {:20.5}",
             self.e - self.nuclear_repulsion,
-            (self.e - self.nuclear_repulsion) * _AU_EV
+            (self.e - self.nuclear_repulsion) * AU_EV
         );
-        println!("One Electron Energy: {:20.9}  {:20.5}", e1, e1 * _AU_EV);
-        println!("Two Electron Energy: {:20.9}  {:20.5}", e2, e2 * _AU_EV);
+        println!("One Electron Energy: {:20.9}  {:20.5}", e1, e1 * AU_EV);
+        println!("Two Electron Energy: {:20.9}  {:20.5}", e2, e2 * AU_EV);
 
         println!("\n\n----------------");
         println!("Orbital Energies (Alpha)");

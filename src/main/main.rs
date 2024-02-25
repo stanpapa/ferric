@@ -30,22 +30,26 @@ fn main() {
     // read input file
     let input = FerricInput::new(&mut args());
 
-    input.molecule.print(libferric::geometry::Unit::Ångström);
-    input.molecule.print(libferric::geometry::Unit::AtomicUnits);
+    input
+        .geometry
+        .print_coords(libferric::geometry::Unit::Ångström);
+    input
+        .geometry
+        .print_coords(libferric::geometry::Unit::AtomicUnits);
 
     // initialize basis set
-    let basis = load_basis_set(&input.basis_set, input.molecule.atoms());
-    basis.print_layout(input.molecule.atoms());
-    basis.print_orca(input.molecule.atoms());
+    let basis = load_basis_set(&input.basis_set, input.geometry.molecule.atoms());
+    basis.print_layout(input.geometry.molecule.atoms());
+    basis.print_orca(input.geometry.molecule.atoms());
 
     // store stuff on disk
-    input.molecule.store(&input.base_name);
+    input.geometry.molecule.store(&input.base_name);
     basis.store(&input.base_name);
 
     // todo: store "GBW" file on disk
 
     // calculate all necessary AO integrals for HF
-    let integrals = IntegralInterface::new(&basis, input.molecule.atoms());
+    let integrals = IntegralInterface::new(&basis, input.geometry.molecule.atoms());
     integrals.calc_one_electron_integral(OneElectronKernel::Overlap);
     integrals.calc_one_electron_integral(OneElectronKernel::HCore);
     // integrals.calc_two_electron_integral(TwoElectronKernel::ERI); // todo: verify

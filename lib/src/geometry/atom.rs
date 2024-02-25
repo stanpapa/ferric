@@ -21,10 +21,8 @@ impl Atom {
         self.el.mass()
     }
 
-    pub fn scale_coords(&mut self, factor: &f64) {
-        for c in &mut self.origin {
-            *c *= factor;
-        }
+    pub fn scale_coord(&mut self, factor: &f64) {
+        self.origin.iter_mut().for_each(|i| *i *= factor);
     }
 }
 

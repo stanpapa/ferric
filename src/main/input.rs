@@ -1,4 +1,5 @@
 use libferric::geometry::molecule::Molecule;
+use libferric::geometry::{Geometry, Unit};
 use libferric::gto_basis_sets::BasisSet;
 use libferric::HFType;
 use std::env::Args;
@@ -15,7 +16,7 @@ pub struct FerricInput {
     pub basis_set: BasisSet,
 
     // Geometry
-    pub molecule: Molecule,
+    pub geometry: Geometry,
 }
 
 // todo: use Serialize/Deserialize?
@@ -64,6 +65,7 @@ impl FerricInput {
     }
 
     pub fn parse_geometry(&mut self, value: &Value) {
+        // todo!("Error management")
         match value.as_mapping() {
             Some(mapping) => {
                 let charge = match mapping.get("charge") {
@@ -74,14 +76,19 @@ impl FerricInput {
                     Some(multiplicity) => multiplicity.as_u64().unwrap(),
                     None => panic!("No multiplicity found"),
                 };
+                let unit = match mapping.get("unit") {
+                    Some(unit) => Unit::from_str(unit.as_str().unwrap()).unwrap(),
+                    None => Unit::Ångström,
+                };
                 let atoms = match mapping.get("xyz") {
                     Some(atoms) => atoms.as_str().unwrap(),
                     None => panic!("No coordinates found"),
                 };
-                self.molecule = Molecule::new(
+                self.geometry = Geometry::new(
                     atoms.lines().map(|atom| atom.parse().unwrap()).collect(),
                     charge as i8,
                     multiplicity as u8,
+                    unit,
                 );
             }
             None => panic!("Invalid geometry input {:?}", value),

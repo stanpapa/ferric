@@ -1,7 +1,4 @@
-use crate::{
-    geometry::atom::Atom,
-    linear_algebra::constants::{_ANG_AU, _AU_ANG, _BOHR_AU},
-};
+use crate::geometry::atom::Atom;
 
 use std::{
     fmt::{Display, Formatter},
@@ -10,64 +7,14 @@ use std::{
     str::FromStr,
 };
 
-use super::Unit;
-
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Molecule {
-    // basic information regarding a molecule (input)
-    pub charge: i8,
-    pub multiplicity: u8,
-
-    unit: Unit,
-
-    // number of electrons (calculated)
-    pub n_electrons: usize,
-    pub n_electrons_alpha: usize,
-    pub n_electrons_beta: usize,
-
     atoms: Vec<Atom>,
 }
 
 impl Molecule {
-    pub fn new(atoms: Vec<Atom>, charge: i8, multiplicity: u8) -> Molecule {
-        // calculate number of electrons
-        let n_electrons: isize =
-            atoms.iter().map(|a| isize::from(a.z())).sum::<isize>() - isize::from(charge);
-
-        if n_electrons <= 0 {
-            panic!("Invalid charge of {}. No electrons present", charge);
-        }
-
-        // Mult = 2Ms + 1 thus the number of unpaired electrons (taken as α) is Mult-1 = 2Ms
-        let alpha_excess = usize::from(multiplicity) - 1;
-
-        // the number of β electrons must be equal the number of doubly occupied orbitals
-        // Ndo = (nelec - n_of_unpaired_elec)/2 this must be an integer
-        if (n_electrons % 2 == 1) && (multiplicity % 2 == 1) {
-            panic!(
-                "Both multiplicity ({}) and number of electrons ({}) are odd, which is impossible",
-                multiplicity, n_electrons
-            );
-        }
-        let n_electrons = n_electrons as usize;
-
-        let n_electrons_beta = (n_electrons - alpha_excess) / 2;
-        let n_electrons_alpha = n_electrons - n_electrons_beta;
-
-        let mut mol = Molecule {
-            charge,
-            multiplicity,
-            unit: Unit::Ångström,
-            atoms,
-            n_electrons,
-            n_electrons_alpha,
-            n_electrons_beta,
-        };
-
-        // convert coordinates to atomic units
-        mol.scale_coords(Unit::AtomicUnits);
-
-        mol
+    pub fn new(atoms: Vec<Atom>) -> Self {
+        Self { atoms }
     }
 
     pub fn num_atoms(&self) -> usize {
@@ -78,67 +25,15 @@ impl Molecule {
         &self.atoms
     }
 
-    pub fn scale_coords(&mut self, unit: Unit) {
-        for atom in &mut self.atoms {
-            match unit {
-                Unit::Ångström => match self.unit {
-                    Unit::Ångström => (),
-                    Unit::AtomicUnits => atom.scale_coords(&_AU_ANG),
-                    Unit::Bohr => todo!(),
-                },
-                Unit::AtomicUnits => match self.unit {
-                    Unit::Ångström => atom.scale_coords(&_ANG_AU),
-                    Unit::AtomicUnits => (),
-                    Unit::Bohr => todo!(),
-                },
-                Unit::Bohr => match self.unit {
-                    Unit::Ångström => todo!(),
-                    Unit::AtomicUnits => todo!(),
-                    Unit::Bohr => (),
-                },
-            }
-        }
-        self.unit = unit;
-    }
-
-    pub fn print(&self, unit: Unit) {
-        let mut mol = self.clone();
-        match unit {
-            Unit::Ångström => {
-                println!(
-                    r#"
---------------------------------
-CARTESIAN COORDINATES (ÅNGSTRÖM)
---------------------------------
-"#
-                );
-            }
-            Unit::Bohr => {
-                println!(
-                    r#"
-----------------------------
-CARTESIAN COORDINATES (BOHR)
-----------------------------
-"#
-                );
-            }
-            Unit::AtomicUnits => {
-                println!(
-                    r#"
-----------------------------
-CARTESIAN COORDINATES (A.U.)
-----------------------------
-"#
-                );
-            }
-        }
-        mol.scale_coords(unit);
-        println!("{}", mol);
+    pub fn scale_coords(&mut self, factor: f64) {
+        self.atoms
+            .iter_mut()
+            .for_each(|atom| atom.scale_coord(&factor));
     }
 
     /// Convert Molecule to xyz format
     fn to_xyz(&self) -> String {
-        return format!("{}\n{}\n{}", self.atoms.len(), self.unit, self);
+        return format!("{}\n\n{}", self.atoms.len(), self);
     }
 }
 
@@ -167,14 +62,15 @@ impl FromStr for Molecule {
             None => return Err("Missing xyz data"),
         };
 
-        let unit: Unit = match lines.next() {
-            Some(val) => val.trim().parse().map_err(|_| "Invalid unit")?,
+        // skip comment line
+        match lines.next() {
+            Some(val) => (),
             None => return Err("This xyz string only contains one line"),
         };
 
+        // read coordinates
         let mut atoms = Vec::<Atom>::with_capacity(n);
         for _ in 0..n {
-            // atoms.push(lines.next().unwrap().trim().parse()?);
             match lines.next() {
                 Some(atom) => atoms.push(atom.trim().parse()?),
                 None => {
@@ -185,15 +81,7 @@ impl FromStr for Molecule {
             }
         }
 
-        Ok(Self {
-            charge: i8::MAX,
-            multiplicity: u8::MAX,
-            unit,
-            n_electrons: 0,
-            n_electrons_alpha: 0,
-            n_electrons_beta: 0,
-            atoms,
-        })
+        Ok(Self { atoms })
     }
 }
 
@@ -223,44 +111,33 @@ mod tests {
     #[test]
     fn serialize_molecule() {
         assert_eq!(
-            Molecule::new(
-                vec![
-                    Atom::new(Element::O, [0.1, 0.2, 3.0]),
-                    Atom::new(Element::H, [-3.3, -2.2, -1.1]),
-                ],
-                -1,
-                1
-            )
+            Molecule::new(vec![
+                Atom::new(Element::O, [0.1, 0.2, 3.0]),
+                Atom::new(Element::H, [-3.3, -2.2, -1.1]),
+            ],)
             .to_xyz(),
             r#"2
-au
-O     0.188972613    0.377945227    5.669178402
-H    -6.236096242   -4.157397495   -2.078698747
+
+O     0.100000000    0.200000000    3.000000000
+H    -3.300000000   -2.200000000   -1.100000000
 "#
         );
     }
 
     #[test]
     fn deserialize_molecule() {
-        use super::Unit;
         use std::str::FromStr;
 
         // passing deserialisation
         assert_eq!(
             Molecule::from_str(
                 r#"2
-au
+
 O     0.188972613    0.377945227    5.669178402
 H    -6.236096242   -4.157397495   -2.078698747
 "#
             ),
             Ok(Molecule {
-                charge: i8::MAX,
-                multiplicity: u8::MAX,
-                unit: Unit::AtomicUnits,
-                n_electrons: 0,
-                n_electrons_alpha: 0,
-                n_electrons_beta: 0,
                 atoms: vec![
                     Atom::new(Element::O, [0.188972613, 0.377945227, 5.669178402]),
                     Atom::new(Element::H, [-6.236096242, -4.157397495, -2.078698747]),
@@ -278,17 +155,6 @@ H    -6.236096242   -4.157397495   -2.078698747
         assert_eq!(
             Molecule::from_str(
                 r#"2
-foo
-O     0.188972613    0.377945227    5.669178402
-H    -6.236096242   -4.157397495   -2.078698747
-"#
-            ),
-            Err("Invalid unit")
-        );
-
-        assert_eq!(
-            Molecule::from_str(
-                r#"2
 "#
             ),
             Err("This xyz string only contains one line")
@@ -297,7 +163,7 @@ H    -6.236096242   -4.157397495   -2.078698747
         assert_eq!(
             Molecule::from_str(
                 r#"2
-au
+
 O     0.188972613    0.377945227    5.669178402
 "#
             ),

@@ -18,19 +18,17 @@ pub fn nuclear_repulsion(mol: &[Atom]) -> f64 {
 mod tests {
     use super::*;
     use crate::geometry::molecule::Molecule;
+    use crate::linear_algebra::constants::ANG_AU;
     use crate::misc::elements::Element::{H, O};
 
     #[test]
     fn nuclear_repulsion() {
-        let mol = Molecule::new(
-            vec![
-                Atom::new(O, [0.0000000000, 0.0000000000, -0.1190150726]),
-                Atom::new(H, [0.7685504811, 0.0000000000, 0.4760602904]),
-                Atom::new(H, [-0.7685504811, 0.0000000000, 0.4760602904]),
-            ],
-            0,
-            1,
-        );
+        let mut mol = Molecule::new(vec![
+            Atom::new(O, [0.0000000000, 0.0000000000, -0.1190150726]),
+            Atom::new(H, [0.7685504811, 0.0000000000, 0.4760602904]),
+            Atom::new(H, [-0.7685504811, 0.0000000000, 0.4760602904]),
+        ]);
+        mol.scale_coords(ANG_AU);
 
         assert_eq!(super::nuclear_repulsion(mol.atoms()), 9.055003146181436);
     }

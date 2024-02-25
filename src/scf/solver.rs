@@ -1,8 +1,5 @@
-use libferric::{
-    geometry::molecule::Molecule,
-    linear_algebra::{
-        matrix::FMatrix, matrix_container::FMatrixSymContainer, matrix_symmetric::FMatrixSym,
-    },
+use libferric::linear_algebra::{
+    matrix::FMatrix, matrix_container::FMatrixSymContainer, matrix_symmetric::FMatrixSym,
 };
 
 pub trait HFSolver {

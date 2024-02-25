@@ -9,7 +9,7 @@ use crate::solver::HFSolver;
 use crate::uhf::UHFSolver;
 
 use libferric::{
-    geometry::molecule::Molecule,
+    geometry::{molecule::Molecule, Geometry},
     gto_basis_sets::{basis::Basis, load_basis_set, BasisSet},
     gto_integrals::{
         integral_interface::IntegralInterface, one_electron::OneElectronKernel,
@@ -30,10 +30,10 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let basename = "input";
 
     // hard-coded base name for now
-    let molecule = Molecule::retrieve(basename);
+    let geometry = Geometry::default(); // todo!()
 
     let basis = Basis::retrieve(basename); // todo!()
-    let integrals = IntegralInterface::new(&basis, molecule.atoms());
+    let integrals = IntegralInterface::new(&basis, geometry.molecule.atoms());
 
     // read integrals from disk
     let h_core = FMatrixSym::retrieve(OneElectronKernel::HCore.to_filename());
@@ -41,16 +41,16 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let s = FMatrixSym::retrieve(OneElectronKernel::Overlap.to_filename());
     let eri = integrals.calc_two_electron_integral(TwoElectronKernel::ERI); // todo: verify
 
-    let hf = UHF;
+    let hf = RHF;
     println!("{} calculation", hf);
 
     match hf {
         RHF => {
-            let mut rhf = RHFSolver::new(&h, &molecule);
+            let mut rhf = RHFSolver::new(&h, &geometry);
             rhf.solve(&h, &eri, &s);
         }
         UHF => {
-            let mut uhf = UHFSolver::new(&[h.clone(), h.clone()], &molecule);
+            let mut uhf = UHFSolver::new(&[h.clone(), h.clone()], &geometry);
             uhf.solve(&h, &eri, &s);
         }
         _ => panic!("{} not implemented", hf),
