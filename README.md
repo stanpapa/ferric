@@ -11,7 +11,7 @@ How to build:
 
 This will first build the library, followed by the binaries. If you want to run the program you could call
 
-    `cargo run`
+    `cargo run input.yaml`
 
-which will compile the program (if neccesary) and call the main executable.
+which will compile the program (if neccesary) and run Ferric
 

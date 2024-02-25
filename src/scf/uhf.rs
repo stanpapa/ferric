@@ -1,18 +1,22 @@
-use libferric::geometry::Geometry;
-use libferric::gto_integrals::nuclear_repulsion::nuclear_repulsion;
-use libferric::linear_algebra::constants::AU_EV;
-use libferric::linear_algebra::diagonalize::Diagonalize;
-use libferric::linear_algebra::matrix_symmetric::FMatrixSym;
-use libferric::linear_algebra::power::Power;
-use libferric::linear_algebra::traits::Dot;
-use libferric::linear_algebra::vector::FVector;
-use libferric::linear_algebra::{matrix::FMatrix, matrix_container::FMatrixSymContainer};
+use super::{diis::DIIS, fock::fock, input::SCFInput, solver::HFSolver};
 
-use crate::diis::DIIS;
-use crate::fock::fock;
-use crate::solver::HFSolver;
+use libferric::{
+    geometry::Geometry,
+    gto_integrals::nuclear_repulsion::nuclear_repulsion,
+    linear_algebra::{
+        constants::AU_EV,
+        diagonalize::Diagonalize,
+        matrix_symmetric::FMatrixSym,
+        power::Power,
+        traits::Dot,
+        vector::FVector,
+        {matrix::FMatrix, matrix_container::FMatrixSymContainer},
+    },
+};
 
 pub struct UHFSolver {
+    input: SCFInput,
+
     c: [FMatrix; 2],
     f: [FMatrix; 2],
     d: [FMatrix; 2],
@@ -24,10 +28,11 @@ pub struct UHFSolver {
 }
 
 impl UHFSolver {
-    pub fn new(c: &[FMatrix; 2], geometry: &Geometry) -> Self {
+    pub fn new(c: &[FMatrix; 2], geometry: &Geometry, input: SCFInput) -> Self {
         let homo = [geometry.n_electrons_alpha, geometry.n_electrons_beta];
         let nuclear_repulsion = nuclear_repulsion(geometry.molecule.atoms());
         Self {
+            input,
             c: [c[0].clone(), c[1].clone()],
             f: [
                 FMatrix::new(c[0].rows, c[0].cols),
@@ -73,7 +78,7 @@ impl HFSolver for UHFSolver {
             self.f[op] = s12 * (h * s12);
 
             // diagonalize F': C'^T F' C' = eps
-            let (eps, mut cprime) = self.f[op].diagonalize_sym();
+            let (eps, cprime) = self.f[op].diagonalize_sym();
             self.eps[op] = eps.clone();
             self.c[op] = s12 * cprime;
         });
@@ -115,13 +120,13 @@ impl HFSolver for UHFSolver {
         // --------------------------------
         self.guess(h, &s12);
 
-        let max_iter = 40;
-        let e_thresh = 1e-6;
-        let rms_thresh = 1e-12;
         let mut ΔE;
         let mut converged = false;
 
-        let mut diis = [DIIS::new(6, 1, s, &s12), DIIS::new(6, 1, s, &s12)];
+        let mut diis = [
+            DIIS::new(self.input.diis_dim_max, self.input.diis_iter_start, s, &s12),
+            DIIS::new(6, 1, s, &s12),
+        ];
         println!(
             "Iter {:^16} {:^16} {:^16}",
             "E",
@@ -129,7 +134,7 @@ impl HFSolver for UHFSolver {
             "D(rms)" // "Iter {:^16} {:^16} {:^16} {:^16}",
                      // "E", "ΔE", "[D,F]", "D(rms)"
         );
-        for iter in 0..max_iter {
+        for iter in 0..self.input.max_iter {
             ΔE = -self.e;
             let d_old = self.d.clone();
 
@@ -175,7 +180,7 @@ impl HFSolver for UHFSolver {
                 rms // "{:3} {:16.9} {:16.9} {:16.9} {:16.9}",
                     // iter, e0, ΔE, comm_norm, rms
             );
-            if ΔE.abs() < e_thresh && rms < rms_thresh {
+            if ΔE.abs() < self.input.e_threshold && rms < self.input.rms_threshold {
                 converged = true;
                 break;
             }
@@ -186,7 +191,7 @@ impl HFSolver for UHFSolver {
         } else {
             println!(
                 "Warning: Wavefunction not converged within {} iterations",
-                max_iter
+                self.input.max_iter
             );
         }
 

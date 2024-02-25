@@ -1,38 +1,24 @@
-mod diis;
-mod fock;
-mod rhf;
-mod solver;
-mod uhf;
-
-use crate::rhf::RHFSolver;
-use crate::solver::HFSolver;
-use crate::uhf::UHFSolver;
+use super::{input::SCFInput, rhf::RHFSolver, solver::HFSolver, uhf::UHFSolver};
 
 use libferric::{
-    geometry::{molecule::Molecule, Geometry},
-    gto_basis_sets::{basis::Basis, load_basis_set, BasisSet},
+    geometry::Geometry,
+    gto_basis_sets::basis::Basis,
     gto_integrals::{
         integral_interface::IntegralInterface, one_electron::OneElectronKernel,
         two_electron::TwoElectronKernel,
     },
-    linear_algebra::{
-        matrix::FMatrix, matrix_container::FMatrixContainer, matrix_container::FMatrixSymContainer,
-        matrix_symmetric::FMatrixSym, power::Power,
-    },
-    HFType,
+    linear_algebra::{matrix::FMatrix, matrix_symmetric::FMatrixSym},
     HFType::{RHF, UHF},
 };
 
 use std::error;
 
-fn main() -> Result<(), Box<dyn error::Error>> {
+pub fn run(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::Error>> {
     println!("SCF Module");
-    let basename = "input";
 
-    // hard-coded base name for now
+    // read data
     let geometry = Geometry::retrieve(basename);
-
-    let basis = Basis::retrieve(basename); // todo!()
+    let basis = Basis::retrieve(basename);
     let integrals = IntegralInterface::new(&basis, geometry.molecule.atoms());
 
     // read integrals from disk
@@ -41,19 +27,18 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let s = FMatrixSym::retrieve(OneElectronKernel::Overlap.to_filename());
     let eri = integrals.calc_two_electron_integral(TwoElectronKernel::ERI); // todo: verify
 
-    let hf = RHF;
-    println!("{} calculation", hf);
+    println!("{} calculation", scf_input.hf);
 
-    match hf {
+    match scf_input.hf {
         RHF => {
-            let mut rhf = RHFSolver::new(&h, &geometry);
+            let mut rhf = RHFSolver::new(&h, &geometry, scf_input);
             rhf.solve(&h, &eri, &s);
         }
         UHF => {
-            let mut uhf = UHFSolver::new(&[h.clone(), h.clone()], &geometry);
+            let mut uhf = UHFSolver::new(&[h.clone(), h.clone()], &geometry, scf_input);
             uhf.solve(&h, &eri, &s);
         }
-        _ => panic!("{} not implemented", hf),
+        _ => panic!("{} not implemented", scf_input.hf),
     }
 
     Ok(())

@@ -202,7 +202,6 @@ dependencies = [
  "libferric",
  "serde",
  "serde_yaml",
- "toml",
 ]
 
 [[package]]

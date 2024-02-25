@@ -1,19 +1,22 @@
-use libferric::geometry::molecule::Molecule;
-use libferric::geometry::Geometry;
-use libferric::gto_integrals::nuclear_repulsion::nuclear_repulsion;
-use libferric::linear_algebra::constants::AU_EV;
-use libferric::linear_algebra::diagonalize::Diagonalize;
-use libferric::linear_algebra::matrix_symmetric::FMatrixSym;
-use libferric::linear_algebra::power::Power;
-use libferric::linear_algebra::traits::Dot;
-use libferric::linear_algebra::vector::FVector;
-use libferric::linear_algebra::{matrix::FMatrix, matrix_container::FMatrixSymContainer};
+use super::{diis::DIIS, fock::fock, input::SCFInput, solver::HFSolver};
 
-use crate::diis::DIIS;
-use crate::fock::fock;
-use crate::solver::HFSolver;
+use libferric::{
+    geometry::Geometry,
+    gto_integrals::nuclear_repulsion::nuclear_repulsion,
+    linear_algebra::{
+        constants::AU_EV,
+        diagonalize::Diagonalize,
+        matrix_symmetric::FMatrixSym,
+        power::Power,
+        traits::Dot,
+        vector::FVector,
+        {matrix::FMatrix, matrix_container::FMatrixSymContainer},
+    },
+};
 
 pub struct RHFSolver {
+    input: SCFInput,
+
     c: FMatrix,
     f: FMatrix,
     d: FMatrix,
@@ -25,12 +28,13 @@ pub struct RHFSolver {
 }
 
 impl RHFSolver {
-    pub fn new(c: &FMatrix, geometry: &Geometry) -> Self {
+    pub fn new(c: &FMatrix, geometry: &Geometry, input: SCFInput) -> Self {
         let homo = geometry.n_electrons / 2;
         println!("HOMO: {:?}", homo);
         let nuclear_repulsion = nuclear_repulsion(geometry.molecule.atoms());
 
         Self {
+            input,
             c: c.clone(),
             f: FMatrix::new(c.rows, c.cols),
             d: FMatrix::new(c.rows, c.cols),
@@ -65,7 +69,7 @@ impl HFSolver for RHFSolver {
         self.f = s12 * (h * s12);
 
         // diagonalize F': C'^T F' C' = eps
-        let (eps, mut cprime) = self.f.diagonalize_sym();
+        let (eps, cprime) = self.f.diagonalize_sym();
         self.eps = eps.clone();
         self.c = s12 * cprime;
 
@@ -100,13 +104,10 @@ impl HFSolver for RHFSolver {
         // --------------------------------
         self.guess(h, &s12);
 
-        let max_iter = 40;
-        let e_thresh = 1e-6;
-        let rms_thresh = 1e-12;
         let mut ΔE;
         let mut converged = false;
 
-        let mut diis = DIIS::new(6, 1, s, &s12);
+        let mut diis = DIIS::new(self.input.diis_dim_max, self.input.diis_iter_start, s, &s12);
         println!(
             "Iter {:^16} {:^16} {:^16}",
             "E",
@@ -114,7 +115,7 @@ impl HFSolver for RHFSolver {
             "D(rms)" // "Iter {:^16} {:^16} {:^16} {:^16}",
                      // "E", "ΔE", "[D,F]", "D(rms)"
         );
-        for iter in 0..max_iter {
+        for iter in 0..self.input.max_iter {
             ΔE = -self.e;
             let d_old = self.d.clone();
 
@@ -157,7 +158,7 @@ impl HFSolver for RHFSolver {
                 rms // "{:3} {:16.9} {:16.9} {:16.9} {:16.9}",
                     // iter, e0, ΔE, comm_norm, rms
             );
-            if ΔE.abs() < e_thresh && rms < rms_thresh {
+            if ΔE.abs() < self.input.e_threshold && rms < self.input.rms_threshold {
                 converged = true;
                 break;
             }
@@ -168,7 +169,7 @@ impl HFSolver for RHFSolver {
         } else {
             println!(
                 "Warning: Wavefunction not converged within {} iterations",
-                max_iter
+                self.input.max_iter
             );
         }
 

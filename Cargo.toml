@@ -5,22 +5,7 @@ authors = ["Stan Papadopoulos <stan.papadopoulos@gmail.com>"]
 edition = "2021"
 license = "MIT"
 
-# cargo run defaults to main executable
-default-run = "ferric"
-
-[[bin]]
-name = "ferric"
-path = "src/main/main.rs"
-
-[[bin]]
-name = "ferric_scf"
-path = "src/scf/main.rs"
-
 [dependencies]
-toml = "*"
 serde = "1.0"
 serde_yaml = "0.9"
 libferric = { path = "lib" }
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-#forward_ref = "1.0.0"

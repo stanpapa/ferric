@@ -1,4 +1,3 @@
-use libferric::geometry::molecule::Molecule;
 use libferric::geometry::{Geometry, Unit};
 use libferric::gto_basis_sets::BasisSet;
 use libferric::HFType;

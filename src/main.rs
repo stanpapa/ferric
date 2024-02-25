@@ -1,13 +1,15 @@
+// main directory
 mod input;
+
+// submodules
+mod scf;
+
 use input::FerricInput;
+use scf::input::SCFInput;
 
 use libferric::{
     gto_basis_sets::load_basis_set,
-    gto_integrals::{
-        integral_interface::IntegralInterface, one_electron::OneElectronKernel,
-        two_electron::TwoElectronKernel,
-    },
-    misc::system::system_command,
+    gto_integrals::{integral_interface::IntegralInterface, one_electron::OneElectronKernel},
 };
 
 use std::env::args;
@@ -54,8 +56,14 @@ fn main() {
     integrals.calc_one_electron_integral(OneElectronKernel::HCore);
     // integrals.calc_two_electron_integral(TwoElectronKernel::ERI); // todo: verify
 
-    system_command("ferric_scf").expect("Something went wrong.");
+    // SCF
+    // create SCFInput
+    let mut scf_input = SCFInput::default();
+    scf_input.hf = input.hf;
+    // scf_input.store(&input.base_name);
+    scf::run::run(&input.base_name, scf_input).expect("SCF calculation did not finish succesfully");
 
     // remove all integrals
     integrals.remove();
+    // remove basis/geometry
 }

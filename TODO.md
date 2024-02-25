@@ -1,6 +1,6 @@
 # Main program
 
-- [ ] Input reader
+- [x] Input reader
 
 # SCF program
 
