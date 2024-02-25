@@ -43,7 +43,7 @@ fn main() {
     basis.print_orca(input.geometry.molecule.atoms());
 
     // store stuff on disk
-    input.geometry.molecule.store(&input.base_name);
+    input.geometry.store(&input.base_name);
     basis.store(&input.base_name);
 
     // todo: store "GBW" file on disk

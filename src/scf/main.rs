@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let basename = "input";
 
     // hard-coded base name for now
-    let geometry = Geometry::default(); // todo!()
+    let geometry = Geometry::retrieve(basename);
 
     let basis = Basis::retrieve(basename); // todo!()
     let integrals = IntegralInterface::new(&basis, geometry.molecule.atoms());

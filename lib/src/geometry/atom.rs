@@ -1,8 +1,10 @@
+use serde::{Deserialize, Serialize};
+
 use crate::misc::elements::Element;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Atom {
     pub el: Element,
     pub origin: [f64; 3],

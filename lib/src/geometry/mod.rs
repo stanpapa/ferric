@@ -1,4 +1,6 @@
-use std::{collections::HashMap, fmt::Display, str::FromStr};
+use std::{collections::HashMap, fmt::Display, fs::File, io::prelude::*, str::FromStr};
+
+use serde::{Deserialize, Serialize};
 
 use crate::linear_algebra::constants::{ANG_AU, ANG_BOHR, AU_ANG, AU_BOHR, BOHR_ANG, BOHR_AU};
 
@@ -7,7 +9,7 @@ use self::{atom::Atom, molecule::Molecule};
 pub mod atom;
 pub mod molecule;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum Unit {
     #[default]
     Ångström,
@@ -40,7 +42,7 @@ impl FromStr for Unit {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct Geometry {
     pub molecule: Molecule,
     unit: Unit,
@@ -94,6 +96,26 @@ impl Geometry {
         geometry.convert_unit(Unit::AtomicUnits);
 
         geometry
+    }
+
+    pub fn store(&self, name: &str) {
+        let mut buffer =
+            File::create(name.to_owned() + ".geometry").expect("Unable to create Geometry file");
+        write!(
+            buffer,
+            "{}",
+            serde_json::to_string(self).expect("Unable to serialize Geometry")
+        )
+        .expect("Unable to write to file");
+    }
+
+    pub fn retrieve(name: &str) -> Self {
+        let mut file =
+            File::open(name.to_owned() + ".geometry").expect("Unable to open file for reading");
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer)
+            .expect("Unable to read Geometry file");
+        serde_json::from_str(&buffer).expect("Unable to deserialize a Geometry")
     }
 
     pub fn convert_unit(&mut self, unit: Unit) {

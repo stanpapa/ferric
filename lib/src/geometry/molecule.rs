@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::geometry::atom::Atom;
 
 use std::{
@@ -7,7 +9,7 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Molecule {
     atoms: Vec<Atom>,
 }
