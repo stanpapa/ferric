@@ -2,12 +2,7 @@ use crate::misc::elements::Element;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use serde::{Deserialize, Serialize};
-// use toml::ser::Serializer; // todo! Derive (De)Serialize myself?
-
-use toml::value::Value;
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Atom {
     pub el: Element,
     pub origin: [f64; 3],
@@ -43,32 +38,23 @@ impl Display for Atom {
     }
 }
 
-impl Atom {
-    pub fn from_array(value: &Value) -> Self {
-        match value.as_array() {
-            Some(array) => Atom {
-                el: Element::from_str(array[0].as_str().unwrap()).unwrap(),
-                origin: array[1..=3]
-                    .iter()
-                    .map(|v| v.as_float().expect("coordinate is not a float"))
-                    .collect::<Vec<f64>>()
-                    .try_into()
-                    .unwrap(),
-            },
-            None => panic!("Invalid atom array"),
+impl FromStr for Atom {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split_whitespace().collect();
+        if parts.len() != 4 {
+            return Err("Expected format: 'element x y z'");
         }
+
+        let element = Element::from_str(parts[0])?;
+        let x = parts[1].parse().map_err(|_| "Invalid float for x")?;
+        let y = parts[2].parse().map_err(|_| "Invalid float for y")?;
+        let z = parts[3].parse().map_err(|_| "Invalid float for z")?;
+
+        Ok(Atom::new(element, [x, y, z]))
     }
 }
-
-// impl Serialize for Atom {
-//     fn serialize<S>(&self, serializer: S) -> Result<serde::ser::Ok, serde::ser::Error>
-//     where
-//         S: Serializer,
-//     {
-//         let toml
-//         Ok(serde::ser::Ok)
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
@@ -78,23 +64,40 @@ mod tests {
     #[test]
     fn serialize_atom() {
         assert_eq!(
-            toml::to_string(&Atom::new(Element::Bi, [0.1, -0.1, 5.0])).unwrap(),
-            r#"el = "Bi"
-origin = [0.1, -0.1, 5.0]
-"#
+            Atom::new(Element::Sn, [0.1, -0.1, 5.0]).to_string(),
+            "Sn    0.100000000   -0.100000000    5.000000000\n"
         );
     }
 
     #[test]
     fn deserialize_atom() {
+        use std::str::FromStr;
+
+        // passing deserialisation
         assert_eq!(
-            toml::from_str::<Atom>(
-                r#"el = "Bi"
-origin = [0.1, -0.1, 5.0]
-"#
-            )
-            .unwrap(),
-            Atom::new(Element::Bi, [0.1, -0.1, 5.0])
+            Atom::from_str("Sn    0.100000000   -0.100000000    5.000000000"),
+            Ok(Atom::new(Element::Sn, [0.1, -0.1, 5.0]))
+        );
+
+        // failing deserialisations
+        assert_eq!(
+            Atom::from_str("Sn    0.100000000   -0.100000000"),
+            Err("Expected format: 'element x y z'")
+        );
+
+        assert_eq!(
+            Atom::from_str("Sn    o.100000000   -0.100000000    5.000000000"),
+            Err("Invalid float for x")
+        );
+
+        assert_eq!(
+            Atom::from_str("Sn    0.100000000   -0.o00000000    5.000000000"),
+            Err("Invalid float for y")
+        );
+
+        assert_eq!(
+            Atom::from_str("Sn    0.100000000   -0.100000000    5,000000000"),
+            Err("Invalid float for z")
         );
     }
 }

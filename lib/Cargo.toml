@@ -8,6 +8,7 @@ edition = "2021"
 # input/output parsing
 toml = "*"
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "*"
 
 # BLAS and LAPACK
 cblas = "0.4.0"

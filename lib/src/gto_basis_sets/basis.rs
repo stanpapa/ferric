@@ -258,7 +258,7 @@ impl Basis {
         write!(
             buffer,
             "{}",
-            toml::to_string(self).expect("Unable to serialize Basis")
+            serde_json::to_string(self).expect("Unable to serialize Basis")
         )
         .expect("Unable to write to file");
     }
@@ -269,7 +269,7 @@ impl Basis {
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)
             .expect("Unable to read file");
-        toml::from_str(&buffer).expect("Unable to deserialize a Basis")
+        serde_json::from_str(&buffer).expect("Unable to deserialize a Basis")
     }
 
     /// Print shell and contraction layout for each unique element present in the calculation
@@ -550,6 +550,8 @@ mod tests {
     //   };
     //   cbf.normalize();
     // }
+
+    use crate::gto_basis_sets::sto_3g;
 
     #[test]
     fn gaussian_layout() {

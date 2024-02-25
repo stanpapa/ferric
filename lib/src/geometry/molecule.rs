@@ -7,28 +7,22 @@ use std::{
     fmt::{Display, Formatter},
     fs::File,
     io::prelude::*,
+    str::FromStr,
 };
-
-use serde::{Deserialize, Serialize};
-use toml::value::Table;
 
 use super::Unit;
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Molecule {
     // basic information regarding a molecule (input)
     pub charge: i8,
     pub multiplicity: u8,
 
-    #[serde(skip_serializing, skip_deserializing)]
     unit: Unit,
 
     // number of electrons (calculated)
-    // #[serde(skip_serializing)]
     pub n_electrons: usize,
-    // #[serde(skip_serializing)]
     pub n_electrons_alpha: usize,
-    // #[serde(skip_serializing)]
     pub n_electrons_beta: usize,
 
     atoms: Vec<Atom>,
@@ -108,20 +102,6 @@ impl Molecule {
     }
 
     pub fn print(&self, unit: Unit) {
-        // ---------------------------------
-        // CARTESIAN COORDINATES (ANGSTROEM)
-        // ---------------------------------
-        //   O      0.000000    0.000000   -0.119015
-        //   H      0.768550    0.000000    0.476060
-        //   H     -0.768550    0.000000    0.476060
-
-        // ----------------------------
-        // CARTESIAN COORDINATES (A.U.)
-        // ----------------------------
-        //   NO LB      ZA    FRAG     MASS         X           Y           Z
-        //    0 O     8.0000    0    15.999    0.000000    0.000000   -0.224906
-        //    1 H     1.0000    0     1.008    1.452350    0.000000    0.899624
-        //    2 H     1.0000    0     1.008   -1.452350    0.000000    0.899624
         let mut mol = self.clone();
         match unit {
             Unit::Ångström => {
@@ -155,6 +135,11 @@ CARTESIAN COORDINATES (A.U.)
         mol.scale_coords(unit);
         println!("{}", mol);
     }
+
+    /// Convert Molecule to xyz format
+    fn to_xyz(&self) -> String {
+        return format!("{}\n{}\n{}", self.atoms.len(), self.unit, self);
+    }
 }
 
 impl Display for Molecule {
@@ -167,38 +152,56 @@ impl Display for Molecule {
     }
 }
 
-impl Molecule {
-    pub fn from_table(table: Table) -> Self {
-        let mut charge = 0;
-        let mut mult = 1;
-        let mut coordinates: Vec<Atom> = vec![];
+impl FromStr for Molecule {
+    type Err = &'static str;
 
-        for (key, val) in table.iter() {
-            match key.to_lowercase().as_str() {
-                "charge" => charge = val.as_integer().unwrap().try_into().unwrap(),
-                "multiplicity" => mult = val.as_integer().unwrap().try_into().unwrap(),
-                "coordinates" => match val.as_array() {
-                    Some(array) => {
-                        coordinates = array.iter().map(|i| Atom::from_array(i)).collect()
-                    }
-                    None => panic!("Coordinates input is not valid"),
-                },
-                _ => panic!("Unknown option: {}", key),
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut lines = s.lines();
+
+        // read number of atoms
+        let n: usize = match lines.next() {
+            Some(val) => val
+                .trim()
+                .parse()
+                .map_err(|_| "Invalid number of coordinates")?,
+            None => return Err("Missing xyz data"),
+        };
+
+        let unit: Unit = match lines.next() {
+            Some(val) => val.trim().parse().map_err(|_| "Invalid unit")?,
+            None => return Err("This xyz string only contains one line"),
+        };
+
+        let mut atoms = Vec::<Atom>::with_capacity(n);
+        for _ in 0..n {
+            // atoms.push(lines.next().unwrap().trim().parse()?);
+            match lines.next() {
+                Some(atom) => atoms.push(atom.trim().parse()?),
+                None => {
+                    return Err(
+                        "The number of atoms does not agree with the number of coordinates found",
+                    )
+                }
             }
         }
 
-        Self::new(coordinates, charge, mult)
+        Ok(Self {
+            charge: i8::MAX,
+            multiplicity: u8::MAX,
+            unit,
+            n_electrons: 0,
+            n_electrons_alpha: 0,
+            n_electrons_beta: 0,
+            atoms,
+        })
     }
+}
 
+impl Molecule {
     pub fn store(&self, name: &str) {
         let mut buffer =
             File::create(name.to_owned() + ".molecule").expect("Unable to create file");
-        write!(
-            buffer,
-            "{}",
-            toml::to_string(self).expect("Unable to serialize Molecule")
-        )
-        .expect("Unable to write to file");
+        writeln!(buffer, "{}", self.to_xyz()).expect("Unable to write to file");
     }
 
     pub fn retrieve(name: &str) -> Self {
@@ -207,7 +210,7 @@ impl Molecule {
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)
             .expect("Unable to read file");
-        toml::from_str(&buffer).expect("Unable to deserialize a Molecule")
+        Self::from_str(&buffer).expect("Unable to deserialize a Molecule")
     }
 }
 
@@ -220,46 +223,6 @@ mod tests {
     #[test]
     fn serialize_molecule() {
         assert_eq!(
-            toml::to_string(&Molecule::new(
-                vec![
-                    Atom::new(Element::O, [0.1, 0.2, 3.0]),
-                    Atom::new(Element::H, [-3.3, -2.2, -1.1]),
-                ],
-                -1,
-                1
-            ))
-            .unwrap(),
-            r#"charge = -1
-multiplicity = 1
-
-[[atoms]]
-el = "O"
-origin = [0.18897261339212518, 0.37794522678425035, 5.669178401763755]
-
-[[atoms]]
-el = "H"
-origin = [-6.23609624194013, -4.157397494626754, -2.078698747313377]
-"#
-        );
-    }
-
-    #[test]
-    fn deserialize_molecule() {
-        assert_eq!(
-            toml::from_str::<Molecule>(
-                r#"charge = -1
-multiplicity = 1
-
-[[atoms]]
-el = "O"
-origin = [0.18897261339212518, 0.37794522678425035, 5.669178401763755]
-
-[[atoms]]
-el = "H"
-origin = [-6.23609624194013, -4.157397494626754, -2.078698747313377]
-"#
-            )
-            .unwrap(),
             Molecule::new(
                 vec![
                     Atom::new(Element::O, [0.1, 0.2, 3.0]),
@@ -268,6 +231,77 @@ origin = [-6.23609624194013, -4.157397494626754, -2.078698747313377]
                 -1,
                 1
             )
+            .to_xyz(),
+            r#"2
+au
+O     0.188972613    0.377945227    5.669178402
+H    -6.236096242   -4.157397495   -2.078698747
+"#
+        );
+    }
+
+    #[test]
+    fn deserialize_molecule() {
+        use super::Unit;
+        use std::str::FromStr;
+
+        // passing deserialisation
+        assert_eq!(
+            Molecule::from_str(
+                r#"2
+au
+O     0.188972613    0.377945227    5.669178402
+H    -6.236096242   -4.157397495   -2.078698747
+"#
+            ),
+            Ok(Molecule {
+                charge: i8::MAX,
+                multiplicity: u8::MAX,
+                unit: Unit::AtomicUnits,
+                n_electrons: 0,
+                n_electrons_alpha: 0,
+                n_electrons_beta: 0,
+                atoms: vec![
+                    Atom::new(Element::O, [0.188972613, 0.377945227, 5.669178402]),
+                    Atom::new(Element::H, [-6.236096242, -4.157397495, -2.078698747]),
+                ],
+            })
+        );
+        // failing deserialisations
+        assert_eq!(
+            Molecule::from_str("a"),
+            Err("Invalid number of coordinates")
+        );
+
+        assert_eq!(Molecule::from_str(""), Err("Missing xyz data"));
+
+        assert_eq!(
+            Molecule::from_str(
+                r#"2
+foo
+O     0.188972613    0.377945227    5.669178402
+H    -6.236096242   -4.157397495   -2.078698747
+"#
+            ),
+            Err("Invalid unit")
+        );
+
+        assert_eq!(
+            Molecule::from_str(
+                r#"2
+"#
+            ),
+            Err("This xyz string only contains one line")
+        );
+
+        assert_eq!(
+            Molecule::from_str(
+                r#"2
+au
+O     0.188972613    0.377945227    5.669178402
+"#
+            ),
+            Err("The number of atoms does not agree with the number of coordinates found")
         );
     }
 }

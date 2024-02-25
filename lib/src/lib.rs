@@ -5,8 +5,6 @@ pub mod gto_integrals;
 pub mod linear_algebra;
 pub mod misc;
 
-use serde::{Deserialize, Serialize};
-
 extern crate blas_src;
 extern crate cblas;
 extern crate lapack_src;
@@ -18,18 +16,13 @@ use std::{
 };
 
 // todo: move
-#[derive(PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Default, PartialEq)]
 pub enum HFType {
+    #[default]
     RHF,
     UHF,
     ROHF,
     CASSCF,
-}
-
-impl Default for HFType {
-    fn default() -> Self {
-        HFType::RHF
-    }
 }
 
 impl From<String> for HFType {
@@ -39,7 +32,7 @@ impl From<String> for HFType {
 }
 
 impl FromStr for HFType {
-    type Err = ();
+    type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let hf = match s.to_uppercase().as_str() {
@@ -47,7 +40,7 @@ impl FromStr for HFType {
             "UHF" => HFType::UHF,
             "ROHF" => HFType::ROHF,
             "CASSCF" => HFType::CASSCF,
-            _ => panic!("Unknown HF type {}", s),
+            _ => return Err("Unknown HF type"),
         };
 
         Ok(hf)
@@ -67,21 +60,23 @@ impl Display for HFType {
 
 #[cfg(test)]
 mod tests {
-    use crate::HFType;
+    use super::HFType;
 
     #[test]
     fn serialize() {
-        assert_eq!(toml::to_string(&HFType::RHF).unwrap(), r#""RHF""#);
-        assert_eq!(toml::to_string(&HFType::UHF).unwrap(), r#""UHF""#);
-        assert_eq!(toml::to_string(&HFType::ROHF).unwrap(), r#""ROHF""#);
-        assert_eq!(toml::to_string(&HFType::CASSCF).unwrap(), r#""CASSCF""#);
+        assert_eq!(HFType::RHF.to_string(), "RHF");
+        assert_eq!(HFType::UHF.to_string(), "UHF");
+        assert_eq!(HFType::ROHF.to_string(), "ROHF");
+        assert_eq!(HFType::CASSCF.to_string(), "CASSCF");
     }
 
     #[test]
     fn deserialize() {
-        assert_eq!(r#""RHF""#, toml::to_string(&HFType::RHF).unwrap());
-        assert_eq!(r#""UHF""#, toml::to_string(&HFType::UHF).unwrap());
-        assert_eq!(r#""ROHF""#, toml::to_string(&HFType::ROHF).unwrap());
-        assert_eq!(r#""CASSCF""#, toml::to_string(&HFType::CASSCF).unwrap(),);
+        use std::str::FromStr;
+
+        assert_eq!(HFType::from_str("RHF"), Ok(HFType::RHF));
+        assert_eq!(HFType::from_str("UHF"), Ok(HFType::UHF));
+        assert_eq!(HFType::from_str("ROHF"), Ok(HFType::ROHF));
+        assert_eq!(HFType::from_str("CASSCF"), Ok(HFType::CASSCF));
     }
 }
