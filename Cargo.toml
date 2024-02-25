@@ -18,6 +18,8 @@ path = "src/scf/main.rs"
 
 [dependencies]
 toml = "*"
+serde = "1.0"
+serde_yaml = "0.9"
 libferric = { path = "lib" }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -40,7 +40,7 @@ fn main() {
 
     // store stuff on disk
     input.molecule.store(&input.base_name);
-    // basis.store(&input.base_name); // todo: fix
+    basis.store(&input.base_name);
 
     // todo: store "GBW" file on disk
 

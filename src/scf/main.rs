@@ -10,7 +10,7 @@ use crate::uhf::UHFSolver;
 
 use libferric::{
     geometry::molecule::Molecule,
-    gto_basis_sets::{load_basis_set, BasisSet},
+    gto_basis_sets::{basis::Basis, load_basis_set, BasisSet},
     gto_integrals::{
         integral_interface::IntegralInterface, one_electron::OneElectronKernel,
         two_electron::TwoElectronKernel,
@@ -27,12 +27,12 @@ use std::error;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     println!("SCF Module");
+    let basename = "input";
 
     // hard-coded base name for now
-    let molecule = Molecule::retrieve("input");
+    let molecule = Molecule::retrieve(basename);
 
-    // work-around until I figure out how to store the basis set on disk
-    let basis = load_basis_set(&BasisSet::sto_3g, molecule.atoms());
+    let basis = Basis::retrieve(basename); // todo!()
     let integrals = IntegralInterface::new(&basis, molecule.atoms());
 
     // read integrals from disk
