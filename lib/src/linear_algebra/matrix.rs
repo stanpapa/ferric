@@ -264,7 +264,7 @@ impl<T: Scalar + Serialize + DeserializeOwned> Matrix<T> {
         write!(
             buffer,
             "{}",
-            toml::to_string(self).expect("Unable to serialize Matrix")
+            serde_json::to_string(self).expect("Unable to serialize Matrix")
         )
         .expect("Unable to write to file");
     }
@@ -274,7 +274,7 @@ impl<T: Scalar + Serialize + DeserializeOwned> Matrix<T> {
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)
             .expect("Unable to read file");
-        toml::from_str(&buffer).expect("Unable to deserialize Matrix")
+        serde_json::from_str(&buffer).expect("Unable to deserialize Matrix")
     }
 }
 
