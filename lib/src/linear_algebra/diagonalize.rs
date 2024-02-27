@@ -1,11 +1,16 @@
 use crate::linear_algebra::{matrix::FMatrix, vector::FVector};
 
-use lapacke::{dgeev, dspev, dsyev, Layout};
+use lapacke::{dgeev, dsyev, Layout};
 
 pub trait Diagonalize {
     type Output;
 
     fn diagonalize(&self) -> Self::Output;
+}
+
+pub trait DiagonalizeSym {
+    type Output;
+
     fn diagonalize_sym(&self) -> Self::Output;
 }
 
@@ -19,11 +24,9 @@ impl Diagonalize for FMatrix {
 
         let info;
         let n = self.rows;
-        // let ldvl = 1;
         let mut a = self.clone();
         let mut eigenvalues_real = FVector::zero(n);
         let mut eigenvalues_imag = FVector::zero(n);
-        // let mut eigenvectors_left = FMatrix::new(n, n);
         let mut eigenvectors_left = vec![];
         let mut eigenvectors_right = FMatrix::zero(n, n);
 
@@ -48,16 +51,14 @@ impl Diagonalize for FMatrix {
         if info != 0 {
             panic!("Diagonalization failed with error code: {}", info);
         }
-        // println!("right:\n{}", eigenvectors_right);
-
-        // doesn't give the proper diagonal matrix
-        // let diag = eigenvectors_right.transposed() * (self.clone() * eigenvectors_right.clone());
-        // println!("diag:\n{}", diag);
 
         (eigenvalues_real, eigenvectors_right)
     }
+}
 
-    /// careful: this assumes a symmetric matrix
+impl DiagonalizeSym for FMatrix {
+    type Output = (FVector, FMatrix);
+
     fn diagonalize_sym(&self) -> Self::Output {
         if self.cols != self.rows {
             panic!("[diagonalize] trying to diagonalize a non-square matrix.");
@@ -91,7 +92,7 @@ impl Diagonalize for FMatrix {
 
 #[cfg(test)]
 mod tests {
-    use crate::linear_algebra::diagonalize::Diagonalize;
+    use crate::linear_algebra::diagonalize::{Diagonalize, DiagonalizeSym};
     use crate::linear_algebra::matrix::FMatrix;
 
     #[test]

@@ -11,7 +11,6 @@ use std::{
 };
 
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
-// use toml::ser::Serializer;
 
 pub type FMatrixContainer = MatrixContainer<FMatrix>;
 
@@ -125,7 +124,7 @@ impl<T: Mat + Serialize + DeserializeOwned> MatrixContainer<T> {
         write!(
             buffer,
             "{}",
-            toml::to_string(self).expect("Unable to serialize MatrixContainer")
+            serde_json::to_string(self).expect("Unable to serialize MatrixContainer")
         )
         .expect("Unable to write to file");
     }
@@ -135,7 +134,7 @@ impl<T: Mat + Serialize + DeserializeOwned> MatrixContainer<T> {
         let mut buffer = String::new();
         file.read_to_string(&mut buffer)
             .expect("Unable to read file");
-        toml::from_str(&buffer).expect("Unable to deserialize a MatrixContainer")
+        serde_json::from_str(&buffer).expect("Unable to deserialize a MatrixContainer")
     }
 }
 

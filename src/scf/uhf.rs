@@ -5,8 +5,8 @@ use libferric::{
     gto_integrals::nuclear_repulsion::nuclear_repulsion,
     linear_algebra::{
         constants::AU_EV,
-        diagonalize::Diagonalize,
-        power::Power,
+        diagonalize::DiagonalizeSym,
+        power::PowerSym,
         traits::Dot,
         vector::FVector,
         {matrix::FMatrix, matrix_container::FMatrixContainer},
@@ -112,7 +112,7 @@ impl HFSolver for UHFSolver {
         // --------------------------------
         // build orthogonalization matrix
         // --------------------------------
-        let s12 = s.powf(-0.5);
+        let s12 = s.powf_sym(-0.5);
 
         // --------------------------------
         // Guess
