@@ -1,6 +1,4 @@
-use crate::linear_algebra::{
-    matrix::Matrix, matrix_symmetric::MatrixSym, scalar::Scalar, vector::Vector,
-};
+use crate::linear_algebra::{matrix::Matrix, scalar::Scalar, vector::Vector};
 
 pub trait Dot<T> {
     type Output;
@@ -12,62 +10,6 @@ pub trait Norm {
     type Output;
 
     fn norm(&self) -> Self::Output;
-}
-
-/// todo: use AddAssign (first implement AddAssign)
-impl<T: Scalar> From<MatrixSym<T>> for Matrix<T> {
-    fn from(sym: MatrixSym<T>) -> Self {
-        Self::from(&sym)
-    }
-}
-
-impl<T: Scalar> From<&MatrixSym<T>> for Matrix<T> {
-    fn from(sym: &MatrixSym<T>) -> Self {
-        let mut mat = Self::zero(sym.n, sym.n);
-        for i in 0..sym.n {
-            for j in 0..=i {
-                mat[(i, j)] = sym[(i, j)];
-                mat[(j, i)] = sym[(i, j)];
-            }
-        }
-        mat
-    }
-}
-
-// impl<T: Scalar> From<&mut MatrixSym<T>> for Matrix<T> {
-//     fn from(sym: &mut MatrixSym<T>) -> Self {
-//         let mut mat = Self::zero(sym.rows(), sym.cols());
-//         for i in 0..sym.rows() {
-//             for j in 0..=i {
-//                 mat[(i, j)] = sym[(i, j)];
-//                 mat[(j, i)] = sym[(i, j)];
-//             }
-//         }
-//         mat
-//     }
-// }
-
-impl<T: Scalar> From<Matrix<T>> for MatrixSym<T> {
-    fn from(mat: Matrix<T>) -> Self {
-        Self::from(&mat)
-    }
-}
-
-impl<T: Scalar> From<&Matrix<T>> for MatrixSym<T> {
-    fn from(mat: &Matrix<T>) -> Self {
-        if mat.rows != mat.cols {
-            panic!("Trying to put a non-square matrix into a symmetric matrix.");
-        }
-
-        let mut sym = Self::zero(mat.rows);
-        for i in 0..mat.rows {
-            for j in 0..=i {
-                sym[(i, j)] = mat[(i, j)];
-            }
-        }
-
-        sym
-    }
 }
 
 pub trait Mat: Clone {
@@ -90,4 +32,3 @@ pub trait Mat: Clone {
 }
 
 impl<T: Scalar> Mat for Matrix<T> {}
-impl<T: Scalar> Mat for MatrixSym<T> {}

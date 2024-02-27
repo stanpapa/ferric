@@ -1,10 +1,7 @@
 use crate::{
     gto_basis_sets::basis::{cdim, dim, BasisShell, CartesianBasisFunction},
     gto_integrals::{eri::eri, integral_interface::IntegralInterface},
-    linear_algebra::{
-        matrix::FMatrix, matrix_container::FMatrixContainer, matrix_container::FMatrixSymContainer,
-        matrix_symmetric::FMatrixSym,
-    },
+    linear_algebra::{matrix::FMatrix, matrix_container::FMatrixContainer},
 };
 
 use std::slice::Iter;
@@ -27,9 +24,9 @@ impl TwoElectronKernel {
 }
 
 impl IntegralInterface {
-    pub fn calc_two_electron_integral(&self, kernel: TwoElectronKernel) -> FMatrixSymContainer {
+    pub fn calc_two_electron_integral(&self, kernel: TwoElectronKernel) -> FMatrixContainer {
         let dim = self.basis().dim();
-        let mut two_electron_integral = FMatrixSymContainer::new();
+        let mut two_electron_integral = FMatrixContainer::new();
 
         for i in 0..self.basis().shells().len() {
             for j in 0..=i {
@@ -58,17 +55,32 @@ impl IntegralInterface {
 
                             let tmp = two_electron_integral
                                 .entry(&ab_offset)
-                                .or_insert_with(|| FMatrixSym::zero(dim));
+                                .or_insert_with(|| FMatrix::zero(dim, dim));
 
                             // an entry exists at ab, so it can be safely retrieved
                             let sub = &integral_sub[*ab];
                             for c in 0..sub.rows {
                                 for d in 0..sub.cols {
                                     tmp[(c + offset_k, d + offset_l)] = sub[(c, d)];
+
+                                    // consider leaving this out
+                                    // if c != d {
+                                    //     tmp[(d + offset_l, c + offset_k)] = sub[(c, d)];
+                                    // }
                                 }
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // think about leaving this out
+        // symmetrisation
+        for mat in two_electron_integral.values_mut() {
+            for c in 0..mat.rows {
+                for d in 0..c {
+                    mat[(d, c)] = mat[(c, d)];
                 }
             }
         }

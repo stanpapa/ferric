@@ -19,11 +19,6 @@ pub type IMatrix = Matrix<i64>;
 // pub type FMatrixSquare = MatrixSquare<f64>;
 // pub type IMatrixSquare = MatrixSquare<i64>;
 
-// pub struct MatrixSym<T: Scalar>(MatrixSquare<T>);
-// pub struct MatrixSym<T: Scalar>(Matrix<T>);
-// pub type FMatrixSym = MatrixSym<f64>;
-// pub type IMatrixSym = MatrixSquare<i64>;
-
 /*
  * note: cannot use macros from forward_ref, because Matrix<T> does
  *       implement Copy...

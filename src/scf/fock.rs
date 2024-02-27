@@ -1,11 +1,9 @@
-use libferric::linear_algebra::{
-    matrix::FMatrix, matrix_container::FMatrixSymContainer, traits::Dot,
-};
+use libferric::linear_algebra::{matrix::FMatrix, matrix_container::FMatrixContainer, traits::Dot};
 
 /// build Fock matrix as
 ///     RHF: Fμν = Hμν + \sum_{ρσ} Dρσ [ (μν|ρσ) - 0.5 (μρ|νσ) ]
 ///     UHF: Fμν = Hμν + \sum_{ρσ} Dρσ [ 2 (μν|ρσ) - (μρ|νσ) ]
-pub fn fock(d: &FMatrix, h: &FMatrix, eri: &FMatrixSymContainer, facj: f64, facx: f64) -> FMatrix {
+pub fn fock(d: &FMatrix, h: &FMatrix, eri: &FMatrixContainer, facj: f64, facx: f64) -> FMatrix {
     let dim = h.rows;
 
     let mut j = FMatrix::zero(dim, dim);

@@ -1,33 +1,30 @@
-use crate::linear_algebra::{matrix::FMatrix, matrix_symmetric::FMatrixSym, traits::Mat};
+use crate::linear_algebra::{matrix::FMatrix, traits::Mat};
 
-use std::ops::Deref;
+use std::collections::BTreeMap;
+use std::ops::{Deref, DerefMut};
 use std::{
-    collections::{
-        hash_map::{Entry, Keys},
-        HashMap,
-    },
+    collections::btree_map::Entry,
     fmt::{Display, Formatter},
     fs::File,
     io::prelude::*,
     ops::{Index, IndexMut},
 };
 
-use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 // use toml::ser::Serializer;
 
 pub type FMatrixContainer = MatrixContainer<FMatrix>;
-pub type FMatrixSymContainer = MatrixContainer<FMatrixSym>;
 
 // #[derive(Clone, Deserialize, Serialize)]
 #[derive(Clone)]
 pub struct MatrixContainer<T: Mat> {
-    data: HashMap<(usize, usize), T>,
+    data: BTreeMap<(usize, usize), T>,
 }
 
 impl<T: Mat> Default for MatrixContainer<T> {
     fn default() -> Self {
         Self {
-            data: HashMap::default(),
+            data: BTreeMap::default(),
         }
     }
 }
@@ -59,10 +56,16 @@ impl<T: Mat> MatrixContainer<T> {
 }
 
 impl<T: Mat> Deref for MatrixContainer<T> {
-    type Target = HashMap<(usize, usize), T>;
+    type Target = BTreeMap<(usize, usize), T>;
 
     fn deref(&self) -> &Self::Target {
         &self.data
+    }
+}
+
+impl<T: Mat> DerefMut for MatrixContainer<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.data
     }
 }
 

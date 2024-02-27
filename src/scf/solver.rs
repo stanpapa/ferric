@@ -1,16 +1,14 @@
-use libferric::linear_algebra::{
-    matrix::FMatrix, matrix_container::FMatrixSymContainer, matrix_symmetric::FMatrixSym,
-};
+use libferric::linear_algebra::{matrix::FMatrix, matrix_container::FMatrixContainer};
 
 pub trait HFSolver {
-    fn solve(&mut self, h: &FMatrix, eri: &FMatrixSymContainer, s: &FMatrixSym);
+    fn solve(&mut self, h: &FMatrix, eri: &FMatrixContainer, s: &FMatrix);
 
     fn guess(&mut self, h: &FMatrix, s12: &FMatrix);
 
     /// Build density as Dμν = \sum_i^{n_occ} Cμi Cνi^T
     fn density(&mut self);
 
-    fn fock(&mut self, h: &FMatrix, eri: &FMatrixSymContainer);
+    fn fock(&mut self, h: &FMatrix, eri: &FMatrixContainer);
 
     /// Calculate RHF energy as: E0 = 0.5 \sum_{μν} Dμν ( Hμν + Fμν )
     fn energy(&mut self, h: &FMatrix);

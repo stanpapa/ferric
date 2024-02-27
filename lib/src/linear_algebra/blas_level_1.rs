@@ -7,7 +7,6 @@ use crate::linear_algebra::vector::FVector;
 use std::ops::{AddAssign, MulAssign};
 
 use crate::linear_algebra::matrix::FMatrix;
-use crate::linear_algebra::matrix_symmetric::FMatrixSym;
 use crate::linear_algebra::utils::check_vec_vec;
 
 use cblas::*;
@@ -336,27 +335,6 @@ impl Dot<FMatrix> for FMatrix {
     }
 }
 
-impl Dot<FMatrixSym> for FMatrix {
-    type Output = f64;
-
-    fn dot(&self, rhs: &FMatrixSym) -> Self::Output {
-        if self.rows != rhs.n {
-            panic!("[Dot] rows do not match");
-        }
-        if self.cols != rhs.n {
-            panic!("[Dot] cols do not match");
-        }
-
-        let mut dot = 0.0;
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                dot += self[(i, j)] * rhs[(i, j)];
-            }
-        }
-        dot
-    }
-}
-
 impl Norm for FVector {
     type Output = f64;
 
@@ -405,22 +383,6 @@ impl MulAssign<&f64> for FMatrix {
     }
 }
 
-// MatrixSym *= scalar
-impl MulAssign<f64> for FMatrixSym {
-    fn mul_assign(&mut self, alpha: f64) {
-        Self::mul_assign(self, &alpha)
-    }
-}
-
-// MatrixSym *= &scalar
-impl MulAssign<&f64> for FMatrixSym {
-    fn mul_assign(&mut self, alpha: &f64) {
-        unsafe {
-            dscal(self.num_elements() as i32, *alpha, self, 1);
-        }
-    }
-}
-
 impl FVector {
     pub fn axpy(&mut self, alpha: &f64, x: &FVector) {
         check_vec_vec("axpy", self, x);
@@ -434,7 +396,6 @@ impl FVector {
 #[cfg(test)]
 mod tests {
     use crate::linear_algebra::matrix::FMatrix;
-    use crate::linear_algebra::matrix_symmetric::FMatrixSym;
     use crate::linear_algebra::traits::{Dot, Norm};
     use crate::linear_algebra::vector::FVector;
 
@@ -522,13 +483,6 @@ mod tests {
 
         mat *= &2.0;
         assert_eq!(mat, FMatrix::new_with_value(N, N, 4.0));
-
-        let mut mat_sym = FMatrixSym::new_with_value(N, 1.0);
-        mat_sym *= 2.0;
-        assert_eq!(mat_sym, FMatrixSym::new_with_value(N, 2.0));
-
-        mat_sym *= &2.0;
-        assert_eq!(mat_sym, FMatrixSym::new_with_value(N, 4.0));
     }
 
     // #[test]

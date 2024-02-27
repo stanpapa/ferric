@@ -8,7 +8,6 @@ pub mod functions;
 pub mod linear_solve;
 pub mod matrix;
 pub mod matrix_container;
-pub mod matrix_symmetric;
 pub mod power;
 mod scalar;
 pub mod traits;

@@ -1,6 +1,5 @@
 use libferric::linear_algebra::{
-    linear_solve::LinearSolve, matrix::FMatrix, matrix_symmetric::FMatrixSym, traits::Dot,
-    vector::FVector,
+    linear_solve::LinearSolve, matrix::FMatrix, traits::Dot, vector::FVector,
 };
 
 use std::cmp::Ordering;
@@ -19,13 +18,13 @@ pub struct DIIS {
 }
 
 impl DIIS {
-    pub fn new(dim_max: usize, iter_start: usize, s: &FMatrixSym, s12: &FMatrix) -> Self {
+    pub fn new(dim_max: usize, iter_start: usize, s: &FMatrix, s12: &FMatrix) -> Self {
         Self {
             dim_max,
             dim: 0,
             iter_start,
             iter_current: 0,
-            s: FMatrix::from(s),
+            s: s.clone(),
             s12: s12.clone(),
             error: vec![FMatrix::default(); dim_max],
             fock: vec![FMatrix::default(); dim_max],
@@ -55,10 +54,10 @@ impl DIIS {
         }
 
         let dim = self.dim + 1;
-        let mut b = FMatrixSym::new_with_value(dim, -1.0);
+        let mut b = FMatrix::new_with_value(dim, dim, -1.0);
         b[(self.dim, self.dim)] = 0.0;
         for i in 0..self.dim {
-            for j in 0..=i {
+            for j in 0..self.dim {
                 b[(i, j)] = self.error[i].dot(&self.error[j]);
             }
         }

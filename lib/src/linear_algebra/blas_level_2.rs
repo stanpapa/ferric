@@ -1,6 +1,5 @@
 use crate::linear_algebra::matrix::FMatrix;
-use crate::linear_algebra::matrix_symmetric::FMatrixSym;
-use crate::linear_algebra::utils::{check_mat_sym_vec, check_mat_vec, check_vec_vec};
+use crate::linear_algebra::utils::{check_mat_vec, check_vec_vec};
 use crate::linear_algebra::vector::FVector;
 
 use cblas::{dgemv, dspmv, dsymv, Layout, Part, Transpose};
@@ -11,7 +10,6 @@ use cblas::{dgemv, dspmv, dsymv, Layout, Part, Transpose};
 
 /// todo:
 ///     [x] DGEMV - matrix vector multiply
-///     [x] DSPMV - symmetric packed matrix vector multiply
 ///     [x] DSYMV - symmetric matrix vector multiply
 ///     [ ] DTRMV - triangular matrix vector multiply
 
@@ -76,43 +74,21 @@ impl FVector {
         }
     }
 
-    // y(n) = alpha * A(n,n) * x(n) + beta * y(n)
-    pub fn dspmv(&mut self, alpha: f64, a: &FMatrixSym, x: &FVector, beta: f64) {
-        check_vec_vec("dspmv", x, self);
-        check_mat_sym_vec("dspmv", a, x);
-
-        unsafe {
-            dspmv(
-                Layout::RowMajor,
-                Part::Lower,
-                a.n as i32,
-                alpha,
-                a,
-                x,
-                1,
-                beta,
-                self,
-                1,
-            );
-        }
-    }
-
     /// y(n) = alpha * A(n,n) * x(n) + beta * y(n)
     /// Inferior to dspmv. Implemented for completeness' sake
-    fn dsymv(&mut self, alpha: f64, a: &FMatrixSym, x: &FVector, beta: f64) {
+    fn dsymv(&mut self, alpha: f64, a: &FMatrix, x: &FVector, beta: f64) {
         check_vec_vec("dsymv", x, self);
-        check_mat_sym_vec("dsymv", a, x);
+        // check_mat_sym_vec("dsymv", a, x);
 
-        let a_sym = FMatrix::from(a);
         let n = self.n as i32;
 
         unsafe {
             dsymv(
                 Layout::RowMajor,
-                Part::Lower,
+                Part::Upper,
                 n,
                 alpha,
-                &a_sym,
+                a,
                 n,
                 x,
                 1,
@@ -161,7 +137,6 @@ mod tests {
     // }
 
     use crate::linear_algebra::matrix::FMatrix;
-    use crate::linear_algebra::matrix_symmetric::FMatrixSym;
     use crate::linear_algebra::vector::FVector;
 
     #[test]
@@ -183,20 +158,9 @@ mod tests {
     }
 
     #[test]
-    fn dspmv() {
-        // todo: a should have all different values
-        let a = FMatrixSym::new_from_vec(N, &vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
-        let x = FVector::new_from_vec(&[-2.0, 3.0, -4.0]);
-        let mut y = FVector::new_from_vec(&[1.0, 2.0, 3.0]);
-        y.dspmv(2.0, &a, &x, 5.0);
-
-        assert_eq!(y, FVector::new_from_vec(&[-19.0, -20.0, -19.0]));
-    }
-
-    #[test]
     fn dsymv() {
         // todo: a should have all different values
-        let a = FMatrixSym::new_with_value(N, 2.0);
+        let a = FMatrix::new_with_value(N, N, 2.0);
         let x = FVector::new_from_vec(&[-2.0, 3.0, -4.0]);
         let mut y = FVector::new_from_vec(&[1.0, 2.0, 3.0]);
         y.dsymv(2.0, &a, &x, 5.0);

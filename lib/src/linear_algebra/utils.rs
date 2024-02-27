@@ -1,5 +1,4 @@
 use crate::linear_algebra::matrix::Matrix;
-use crate::linear_algebra::matrix_symmetric::MatrixSym;
 use crate::linear_algebra::scalar::Scalar;
 use crate::linear_algebra::vector::Vector;
 
@@ -17,18 +16,6 @@ pub fn check_vec_vec<T: Scalar>(s: &str, lhs: &Vector<T>, rhs: &Vector<T>) {
 
 pub fn check_mat_vec<T: Scalar>(s: &str, lhs: &Matrix<T>, rhs: &Vector<T>) {
     if lhs.cols != rhs.n {
-        panic!("[{}] Incompatible dimensions.", s);
-    }
-
-    if !lhs.is_ok() {
-        panic!("[{}] lhs is not OK.", s);
-    } else if !rhs.is_ok() {
-        panic!("[{}] rhs is not OK.", s);
-    }
-}
-
-pub fn check_mat_sym_vec<T: Scalar>(s: &str, lhs: &MatrixSym<T>, rhs: &Vector<T>) {
-    if lhs.n != rhs.n {
         panic!("[{}] Incompatible dimensions.", s);
     }
 

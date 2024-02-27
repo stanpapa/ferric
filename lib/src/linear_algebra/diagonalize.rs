@@ -1,6 +1,6 @@
-use crate::linear_algebra::{matrix::FMatrix, matrix_symmetric::FMatrixSym, vector::FVector};
+use crate::linear_algebra::{matrix::FMatrix, vector::FVector};
 
-use lapacke::{dgeev, dspev, Layout};
+use lapacke::{dgeev, dspev, dsyev, Layout};
 
 pub trait Diagonalize {
     type Output;
@@ -9,7 +9,6 @@ pub trait Diagonalize {
     fn diagonalize_sym(&self) -> Self::Output;
 }
 
-// todo: merge FMatrix FMatrixSym impl (macro?)
 impl Diagonalize for FMatrix {
     type Output = (FVector, FMatrix);
 
@@ -20,7 +19,7 @@ impl Diagonalize for FMatrix {
 
         let info;
         let n = self.rows;
-        let ldvl = 1;
+        // let ldvl = 1;
         let mut a = self.clone();
         let mut eigenvalues_real = FVector::zero(n);
         let mut eigenvalues_imag = FVector::zero(n);
@@ -49,46 +48,36 @@ impl Diagonalize for FMatrix {
         if info != 0 {
             panic!("Diagonalization failed with error code: {}", info);
         }
-        println!("right:\n{}", eigenvectors_right);
+        // println!("right:\n{}", eigenvectors_right);
 
         // doesn't give the proper diagonal matrix
-        let diag = eigenvectors_right.transposed() * (self.clone() * eigenvectors_right.clone());
-        println!("diag:\n{}", diag);
+        // let diag = eigenvectors_right.transposed() * (self.clone() * eigenvectors_right.clone());
+        // println!("diag:\n{}", diag);
 
         (eigenvalues_real, eigenvectors_right)
     }
 
     /// careful: this assumes a symmetric matrix
     fn diagonalize_sym(&self) -> Self::Output {
-        let mat_sym = FMatrixSym::from(self);
-        mat_sym.diagonalize()
-    }
-}
+        if self.cols != self.rows {
+            panic!("[diagonalize] trying to diagonalize a non-square matrix.");
+        }
 
-impl Diagonalize for FMatrixSym {
-    type Output = (FVector, FMatrix);
-
-    fn diagonalize(&self) -> Self::Output {
-        self.diagonalize_sym()
-    }
-
-    fn diagonalize_sym(&self) -> Self::Output {
-        let n = self.n;
         let info;
-        let mut ap = self.clone();
+        let n = self.rows;
+        let mut eigenvectors = self.clone();
         let mut eigenvalues = FVector::zero(n);
-        let mut eigenvectors = FMatrix::zero(n, n);
 
+        // todo: not correct
         unsafe {
-            info = dspev(
+            info = dsyev(
                 Layout::RowMajor,
                 b'V',
-                b'L',
+                b'U',
                 n as i32,
-                &mut ap,
-                &mut eigenvalues,
                 &mut eigenvectors,
                 n as i32,
+                &mut eigenvalues,
             );
         }
 
@@ -104,7 +93,6 @@ impl Diagonalize for FMatrixSym {
 mod tests {
     use crate::linear_algebra::diagonalize::Diagonalize;
     use crate::linear_algebra::matrix::FMatrix;
-    use crate::linear_algebra::matrix_symmetric::FMatrixSym;
 
     #[test]
     fn diagonalize() {
@@ -121,33 +109,12 @@ mod tests {
             println!("{}, {}", one, another);
             assert!((one - another).abs() < 1e-14);
         }
-
-        // symmetric matrix
-        let b = FMatrix::new_from_vec(3, 3, &[3.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 3.0]);
-        let (eigenvalues, _eigenvectors) = b.diagonalize();
-
-        for (one, another) in eigenvalues.iter().zip(&[2.0, 2.0, 5.0]) {
-            // 2 5 2 is
-            println!("{}, {}", one, another);
-            assert!((one - another).abs() < 1e-14);
-        }
     }
 
     #[test]
     fn diagonalize_sym() {
         let a = FMatrix::new_from_vec(3, 3, &[3.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 3.0]);
         let (eigenvalues, _eigenvectors) = a.diagonalize_sym();
-
-        for (one, another) in eigenvalues.iter().zip(&[2.0, 2.0, 5.0]) {
-            println!("{}, {}", one, another);
-            assert!((one - another).abs() < 1e-14);
-        }
-    }
-
-    #[test]
-    fn diagonalize_matrix_sym() {
-        let a = FMatrixSym::new_from_vec(3, &[3.0, 1.0, 3.0, 1.0, 1.0, 3.0]);
-        let (eigenvalues, _eigenvectors) = a.diagonalize();
 
         for (one, another) in eigenvalues.iter().zip(&[2.0, 2.0, 5.0]) {
             println!("{}, {}", one, another);

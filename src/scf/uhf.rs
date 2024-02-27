@@ -6,11 +6,10 @@ use libferric::{
     linear_algebra::{
         constants::AU_EV,
         diagonalize::Diagonalize,
-        matrix_symmetric::FMatrixSym,
         power::Power,
         traits::Dot,
         vector::FVector,
-        {matrix::FMatrix, matrix_container::FMatrixSymContainer},
+        {matrix::FMatrix, matrix_container::FMatrixContainer},
     },
 };
 
@@ -95,7 +94,7 @@ impl HFSolver for UHFSolver {
         });
     }
 
-    fn fock(&mut self, h: &FMatrix, eri: &FMatrixSymContainer) {
+    fn fock(&mut self, h: &FMatrix, eri: &FMatrixContainer) {
         self.f[0] = fock(&self.d[0], h, eri, 2.0, 1.0);
         self.f[1] = fock(&self.d[1], h, eri, 2.0, 1.0);
     }
@@ -109,7 +108,7 @@ impl HFSolver for UHFSolver {
             .sum::<f64>()
             + self.nuclear_repulsion;
     }
-    fn solve(&mut self, h: &FMatrix, eri: &FMatrixSymContainer, s: &FMatrixSym) {
+    fn solve(&mut self, h: &FMatrix, eri: &FMatrixContainer, s: &FMatrix) {
         // --------------------------------
         // build orthogonalization matrix
         // --------------------------------

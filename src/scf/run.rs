@@ -7,7 +7,7 @@ use libferric::{
         integral_interface::IntegralInterface, one_electron::OneElectronKernel,
         two_electron::TwoElectronKernel,
     },
-    linear_algebra::{matrix::FMatrix, matrix_symmetric::FMatrixSym},
+    linear_algebra::matrix::FMatrix,
     HFType::{RHF, UHF},
 };
 
@@ -58,9 +58,9 @@ pub fn run(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::Err
     println!("RMS:                   {:5.3e}", scf_input.rms_threshold);
 
     // read integrals from disk
-    let h_core = FMatrixSym::retrieve(OneElectronKernel::HCore.to_filename());
+    let h_core = FMatrix::retrieve(OneElectronKernel::HCore.to_filename());
     let h = FMatrix::from(h_core); // FMatrixSym -> FMatrix
-    let s = FMatrixSym::retrieve(OneElectronKernel::Overlap.to_filename());
+    let s = FMatrix::retrieve(OneElectronKernel::Overlap.to_filename());
 
     // time
     let start_time = Instant::now();

@@ -1,6 +1,4 @@
-use crate::linear_algebra::{
-    diagonalize::Diagonalize, matrix::FMatrix, matrix_symmetric::FMatrixSym,
-};
+use crate::linear_algebra::{diagonalize::Diagonalize, matrix::FMatrix};
 
 pub trait Power {
     type Output;
@@ -9,7 +7,7 @@ pub trait Power {
     fn powf(&self, pow: f64) -> Self::Output;
 }
 
-impl Power for FMatrixSym {
+impl Power for FMatrix {
     type Output = FMatrix;
 
     fn powi(&self, n: i32) -> Self::Output {
@@ -40,3 +38,5 @@ impl Power for FMatrixSym {
         &eigenvectors * (lambda_n * eigenvectors.transposed())
     }
 }
+
+// todo!() tests
