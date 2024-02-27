@@ -30,7 +30,6 @@ pub struct RHFSolver {
 impl RHFSolver {
     pub fn new(c: &FMatrix, geometry: &Geometry, input: SCFInput) -> Self {
         let homo = geometry.n_electrons / 2;
-        println!("HOMO: {:?}", homo);
         let nuclear_repulsion = nuclear_repulsion(geometry.molecule.atoms());
 
         Self {
@@ -59,7 +58,7 @@ impl RHFSolver {
 
 impl HFSolver for RHFSolver {
     fn guess(&mut self, h: &FMatrix, s12: &FMatrix) {
-        println!("Guess");
+        println!("\nGuess: HCORE");
         // --------------------------------
         // build initial guess density
         // --------------------------------
@@ -109,7 +108,7 @@ impl HFSolver for RHFSolver {
 
         let mut diis = DIIS::new(self.input.diis_dim_max, self.input.diis_iter_start, s, &s12);
         println!(
-            "Iter {:^16} {:^16} {:^16}",
+            "\nIter {:^16} {:^16} {:^16}",
             "E",
             "ΔE",
             "D(rms)" // "Iter {:^16} {:^16} {:^16} {:^16}",

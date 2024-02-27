@@ -38,14 +38,14 @@ fn main() {
     input
         .geometry
         .print_coords(libferric::geometry::Unit::AtomicUnits);
+    input.geometry.store(&input.base_name);
 
+    // --------------------------------------------------
     // initialize basis set
+    // --------------------------------------------------
     let basis = load_basis_set(&input.basis_set, input.geometry.molecule.atoms());
     basis.print_layout(input.geometry.molecule.atoms());
     basis.print_orca(input.geometry.molecule.atoms());
-
-    // store stuff on disk
-    input.geometry.store(&input.base_name);
     basis.store(&input.base_name);
 
     // todo: store "GBW" file on disk

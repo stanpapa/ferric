@@ -27,7 +27,6 @@ impl TwoElectronKernel {
 }
 
 impl IntegralInterface {
-    // pub fn calc_two_electron_integral(&self, kernel: TwoElectronKernel) {
     pub fn calc_two_electron_integral(&self, kernel: TwoElectronKernel) -> FMatrixSymContainer {
         let dim = self.basis().dim();
         let mut two_electron_integral = FMatrixSymContainer::new();
@@ -181,27 +180,54 @@ impl IntegralInterface {
         let td = self.basis().trafo_matrix(l_d);
 
         let mut spherical = FMatrixContainer::new();
-        // todo: use BLAS
-        for i in 0..dim(l_a) {
-            for j in 0..dim(l_b) {
-                spherical.insert((i, j), &FMatrix::zero(dim(l_c), dim(l_d)));
-                for k in 0..dim(l_c) {
-                    for l in 0..dim(l_d) {
-                        for a in 0..cdim(l_a) {
-                            for b in 0..cdim(l_b) {
-                                for c in 0..cdim(l_c) {
-                                    for d in 0..cdim(l_d) {
-                                        spherical[(i, j)][(k, l)] += ta[(i, a)]
-                                            * tb[(j, b)]
-                                            * tc[(k, c)]
-                                            * td[(l, d)]
-                                            * cartesian[(a, b)][(c, d)];
-                                    }
-                                }
-                            }
-                        }
+
+        // resort       (ab|cd) -> (cd|ab)
+        // half trafo   (cd|ab) -> (cd|ij)
+        // resort       (cd|ij) -> (ij|cd)
+        // half trafo   (ij|cd) -> (ij|kl)
+
+        // resort (ab|cd) -> (cd|ab)
+        let mut cartesian_resorted = FMatrixContainer::new();
+        for c in 0..cdim(l_c) {
+            for d in 0..cdim(l_d) {
+                let mut cartesian_cd = FMatrix::zero(cdim(l_a), cdim(l_b));
+                for a in 0..cdim(l_a) {
+                    for b in 0..cdim(l_b) {
+                        cartesian_cd[(a, b)] = cartesian[(a, b)][(c, d)];
                     }
                 }
+                cartesian_resorted.insert((c, d), &cartesian_cd);
+            }
+        }
+
+        // half trafo (cd|ab) -> (cd|ij)
+        let mut half = FMatrixContainer::new();
+        for c in 0..cdim(l_c) {
+            for d in 0..cdim(l_d) {
+                let half_cd = ta * &cartesian_resorted[(c, d)] * tb.transposed();
+                half.insert((c, d), &half_cd);
+            }
+        }
+
+        // resort (cd|ij) -> (ij|cd)
+        let mut half_resorted = FMatrixContainer::new();
+        for i in 0..dim(l_a) {
+            for j in 0..dim(l_b) {
+                let mut half_ij = FMatrix::zero(cdim(l_c), cdim(l_d));
+                for c in 0..cdim(l_c) {
+                    for d in 0..cdim(l_d) {
+                        half_ij[(c, d)] = half[(c, d)][(i, j)]
+                    }
+                }
+                half_resorted.insert((i, j), &half_ij);
+            }
+        }
+
+        // second half trafo (ij|cd) -> (ij|kl)
+        for i in 0..dim(l_a) {
+            for j in 0..dim(l_b) {
+                let full_ij = tc * &half_resorted[(i, j)] * td.transposed();
+                spherical.insert((i, j), &full_ij);
             }
         }
 

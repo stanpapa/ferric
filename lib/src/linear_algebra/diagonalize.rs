@@ -40,7 +40,7 @@ impl Diagonalize for FMatrix {
                 &mut eigenvalues_real,
                 &mut eigenvalues_imag,
                 &mut eigenvectors_left,
-                n as i32,
+                1,
                 &mut eigenvectors_right,
                 n as i32,
             );
@@ -109,10 +109,22 @@ mod tests {
     #[test]
     fn diagonalize() {
         // non-symmetric matrix
+        let a = FMatrix::new_from_vec(3, 3, &[1.0, 2.0, -3.0, 4.0, 5.0, 6.0, -7.0, 8.0, 9.0]);
+        let (eigenvalues, _eigenvectors) = a.diagonalize();
+
+        for (one, another) in
+            eigenvalues
+                .iter()
+                .zip(&[-4.749430845008213, 5.215160867742253, 14.534269977265952])
+        {
+            // 2 5 2 is
+            println!("{}, {}", one, another);
+            assert!((one - another).abs() < 1e-14);
+        }
 
         // symmetric matrix
-        let a = FMatrix::new_from_vec(3, 3, &[3.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 3.0]);
-        let (eigenvalues, _eigenvectors) = a.diagonalize();
+        let b = FMatrix::new_from_vec(3, 3, &[3.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 3.0]);
+        let (eigenvalues, _eigenvectors) = b.diagonalize();
 
         for (one, another) in eigenvalues.iter().zip(&[2.0, 2.0, 5.0]) {
             // 2 5 2 is
