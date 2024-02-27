@@ -185,12 +185,12 @@ mod tests {
     #[test]
     fn dspmv() {
         // todo: a should have all different values
-        let a = FMatrixSym::new_with_value(N, 2.0);
+        let a = FMatrixSym::new_from_vec(N, &vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
         let x = FVector::new_from_vec(&[-2.0, 3.0, -4.0]);
         let mut y = FVector::new_from_vec(&[1.0, 2.0, 3.0]);
         y.dspmv(2.0, &a, &x, 5.0);
 
-        assert_eq!(y, FVector::new_from_vec(&[-7.0, -2.0, 3.0]));
+        assert_eq!(y, FVector::new_from_vec(&[-19.0, -20.0, -19.0]));
     }
 
     #[test]

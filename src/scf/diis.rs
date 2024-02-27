@@ -55,10 +55,10 @@ impl DIIS {
         }
 
         let dim = self.dim + 1;
-        let mut b = FMatrix::new_with_value(dim, dim, -1.0);
+        let mut b = FMatrixSym::new_with_value(dim, -1.0);
         b[(self.dim, self.dim)] = 0.0;
         for i in 0..self.dim {
-            for j in 0..self.dim {
+            for j in 0..=i {
                 b[(i, j)] = self.error[i].dot(&self.error[j]);
             }
         }
@@ -75,6 +75,7 @@ impl DIIS {
         }
     }
 
+    // Error = FDS - SDF
     fn calc_error_matrix(&self, f: &FMatrix, d: &FMatrix) -> FMatrix {
         let mut error = f * (d * &self.s);
         error -= &self.s * (d * f);

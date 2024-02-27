@@ -16,7 +16,7 @@ use std::{
 };
 
 // todo: move
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Clone)]
 pub enum HFType {
     #[default]
     RHF,

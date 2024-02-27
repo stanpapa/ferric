@@ -1,5 +1,6 @@
 use libferric::HFType;
 
+#[derive(Clone)]
 pub struct SCFInput {
     // HF type
     pub hf: HFType,

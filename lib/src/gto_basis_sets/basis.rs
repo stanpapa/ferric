@@ -415,7 +415,12 @@ BASIS SET IN ORCA FORMAT
                         let s = &shell.shell;
                         println!("{} {}", labels.get(&s.l).unwrap(), s.coefs.len());
                         for i in 0..s.coefs.len() {
-                            println!(" {:2}  {:17.10} {:17.10}", i + 1, s.exps[i], s.coefs[i]);
+                            println!(
+                                " {:2}  {:17.10} {:17.10}",
+                                i + 1,
+                                s.exps[i],
+                                shell.cbf[0].coefs[i]
+                            );
                         }
                     }
 

@@ -50,7 +50,9 @@ fn main() {
 
     // todo: store "GBW" file on disk
 
+    // --------------------------------------------------
     // calculate all necessary AO integrals for HF
+    // --------------------------------------------------
     let integrals = IntegralInterface::new(&basis, input.geometry.molecule.atoms());
     integrals.calc_one_electron_integral(OneElectronKernel::Overlap);
     integrals.calc_one_electron_integral(OneElectronKernel::HCore);
@@ -58,8 +60,10 @@ fn main() {
 
     // SCF
     // create SCFInput
-    let mut scf_input = SCFInput::default();
-    scf_input.hf = input.hf;
+    let scf_input = SCFInput {
+        hf: input.hf,
+        ..SCFInput::default()
+    };
     // scf_input.store(&input.base_name);
     scf::run::run(&input.base_name, scf_input).expect("SCF calculation did not finish succesfully");
 

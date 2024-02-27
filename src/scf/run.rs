@@ -29,17 +29,16 @@ pub fn run(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::Err
 
     println!("{} calculation", scf_input.hf);
 
-    match scf_input.hf {
-        RHF => {
-            let mut rhf = RHFSolver::new(&h, &geometry, scf_input);
-            rhf.solve(&h, &eri, &s);
-        }
-        UHF => {
-            let mut uhf = UHFSolver::new(&[h.clone(), h.clone()], &geometry, scf_input);
-            uhf.solve(&h, &eri, &s);
-        }
-        _ => panic!("{} not implemented", scf_input.hf),
-    }
+    let mut solver = set_solver(scf_input.clone(), &h, &geometry);
+    solver.solve(&h, &eri, &s);
 
     Ok(())
+}
+
+fn set_solver(scf_input: SCFInput, h: &FMatrix, geometry: &Geometry) -> Box<dyn HFSolver> {
+    match scf_input.hf {
+        RHF => Box::new(RHFSolver::new(h, geometry, scf_input)),
+        UHF => Box::new(UHFSolver::new(&[h.clone(), h.clone()], geometry, scf_input)),
+        _ => panic!("{} not implemented", scf_input.hf),
+    }
 }

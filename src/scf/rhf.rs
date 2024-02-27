@@ -127,7 +127,7 @@ impl HFSolver for RHFSolver {
             // --------------------------------
             // calculate HF energy
             // --------------------------------
-            self.energy(&h);
+            self.energy(h);
 
             // --------------------------------
             // check for convergence
@@ -146,7 +146,7 @@ impl HFSolver for RHFSolver {
             }
             let f_prime = &s12 * &self.f * &s12;
             let (eps, cprime) = f_prime.diagonalize_sym();
-            self.eps = eps.clone();
+            self.eps = eps;
             self.c = &s12 * cprime;
             self.density();
             let rms = self.d_rms(&d_old);
