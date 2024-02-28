@@ -99,7 +99,7 @@ impl BinomialCoefficient for $t {
             panic!("k is larger than n!");
         }
 
-        (1..=*k).map(|i| (*self + 1 - i) / i).product::<$t>() as usize
+        self.factorial() / (k.factorial() * (self - k).factorial())
     }
 }
 
@@ -119,7 +119,7 @@ impl BinomialCoefficient for $t {
             return 0;
         }
 
-        (1..=*k).map(|i| (*self + 1 - i) / i).product::<$t>() as usize
+        self.factorial() / (k.factorial() * (self - k).factorial())
     }
 }
 
@@ -181,5 +181,7 @@ mod tests {
     #[test]
     fn test_binomial_coeff() {
         assert_eq!(10, 5_u8.binomial_coefficient(&2));
+        assert_eq!(1, 2_u8.binomial_coefficient(&2));
+        assert_eq!(1, 2_i8.binomial_coefficient(&2));
     }
 }

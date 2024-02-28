@@ -63,7 +63,6 @@ impl HFSolver for RHFSolver {
         // --------------------------------
         // core fock matrix: F' = S^{-1/2}^T H S^{-1/2} = S^{-1/2} H S^{-1/2}
         // S-1/2 = symmetric
-        // todo implement FMatrixSym * FMatrix
         self.f = s12 * (h * s12);
 
         // diagonalize F': C'^T F' C' = eps
@@ -128,11 +127,6 @@ impl HFSolver for RHFSolver {
             self.energy(h);
 
             // --------------------------------
-            // check for convergence
-            // --------------------------------
-            ΔE += self.e;
-
-            // --------------------------------
             // build new density
             // --------------------------------
             // 1. Orthogonalize F' = S-1/2 F S-1/2
@@ -147,6 +141,12 @@ impl HFSolver for RHFSolver {
             self.eps = eps;
             self.c = &s12 * cprime;
             self.density();
+
+            // --------------------------------
+            // check for convergence
+            // --------------------------------
+            ΔE += self.e;
+
             let rms = self.d_rms(&d_old);
             println!(
                 "{:3} {:16.9} {:16.5e} {:16.5e}",

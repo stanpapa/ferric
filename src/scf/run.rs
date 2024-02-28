@@ -58,8 +58,7 @@ pub fn run(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::Err
     println!("RMS:                   {:5.3e}", scf_input.rms_threshold);
 
     // read integrals from disk
-    let h_core = FMatrix::retrieve(OneElectronKernel::HCore.to_filename());
-    let h = FMatrix::from(h_core); // FMatrixSym -> FMatrix
+    let h = FMatrix::retrieve(OneElectronKernel::HCore.to_filename());
     let s = FMatrix::retrieve(OneElectronKernel::Overlap.to_filename());
 
     // time

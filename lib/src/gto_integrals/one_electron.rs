@@ -46,7 +46,6 @@ impl IntegralInterface {
     ) -> FMatrix {
         let ta = self.basis().trafo_matrix(l_a);
         let tb = self.basis().trafo_matrix(l_b);
-        // ta.clone() * (matrix_cartesian.clone() * tb.transposed())
         ta * (matrix_cartesian * tb.transposed())
     }
 

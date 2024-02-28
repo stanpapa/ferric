@@ -157,11 +157,7 @@ impl Basis {
     }
 
     pub fn offset(&self, sn: usize) -> usize {
-        let mut offset = 0;
-        for i in 0..sn {
-            offset += self.shells[i].dim();
-        }
-        offset
+        (0..sn).map(|i| self.shells[i].dim()).sum()
     }
 
     // fn coffset(&self, sn: &usize) -> usize {
@@ -175,56 +171,49 @@ impl Basis {
     /// Cartesian to spherical harmonics transformation matrix
     /// https://doi.org/10.1002/qua.560540202
     fn cartesian_spherical_transformation(lmax: &u8) -> FMatrix {
-        // cartesian components
-        let mut lx: u8;
-        let mut ly: u8;
-        let mut lz: u8;
-
         let mut exponent: f64;
-
         let mut s: f64;
-        let mut s1: f64;
-        let mut s2: f64;
 
-        let l = i16::from(*lmax);
+        let l = *lmax as i16;
 
         let xyz = gaussian_layout(lmax);
         let mut mat = FMatrix::zero(dim(lmax), cdim(lmax));
 
         for c in 0..cdim(lmax) {
-            lx = xyz[c][0];
-            ly = xyz[c][1];
-            lz = xyz[c][2];
+            // cartesian components
+            let lx = xyz[c][0] as i16;
+            let ly = xyz[c][1] as i16;
+            let lz = xyz[c][2] as i16;
 
             for m in -l..=l {
-                let mut j = i16::from(lx) + i16::from(ly) - m.abs();
+                let mut j = lx + ly - m.abs();
                 if j >= 0 && j % 2 == 0 {
                     j /= 2;
-                    s1 = 0.0;
+                    let mut s1 = 0.0;
 
                     for i in 0..=((l - m.abs()) / 2) {
-                        s2 = 0.0;
+                        let mut s2 = 0.0;
                         for k in 0..=j {
-                            if (m < 0 && (m.abs() - i16::from(lx)).abs() % 2 == 1)
-                                || (m > 0 && (m.abs() - i16::from(lx)).abs() % 2 == 0)
+                            if (m < 0 && (m.abs() - lx).abs() % 2 == 1)
+                                || (m > 0 && (m.abs() - lx).abs() % 2 == 0)
                             {
-                                exponent = f64::from((m.abs() - i16::from(lx) + 2 * k) / 2);
-                                s = -1.0_f64.powf(exponent) * 2.0_f64.sqrt();
+                                exponent = f64::from((m.abs() - lx + 2 * k) / 2);
+                                s = (-1.0_f64).powf(exponent) * 2.0_f64.sqrt();
                             } else if m == 0 && lx % 2 == 0 {
-                                exponent = f64::from(k - i16::from(lx) / 2);
-                                s = -1.0f64.powf(exponent);
+                                exponent = f64::from(k - lx / 2);
+                                s = (-1.0f64).powf(exponent);
                             } else {
                                 s = 0.0;
                             }
 
                             s2 += j.binomial_coefficient(&k) as f64
-                                * (m.abs().binomial_coefficient(&(i16::from(lx) - 2 * k))) as f64
+                                * (m.abs().binomial_coefficient(&(lx - 2 * k))) as f64
                                 * s;
                         }
 
                         s1 += l.binomial_coefficient(&i) as f64
                             * i.binomial_coefficient(&j) as f64
-                            * -1.0f64.powf(f64::from(i))
+                            * (-1.0f64).powf(f64::from(i))
                             * (2 * l - 2 * i).factorial() as f64
                             / (l - m.abs() - 2 * i).factorial() as f64
                             * s2;
@@ -242,8 +231,7 @@ impl Basis {
                             * (l + m.abs()).factorial() as f64))
                         .sqrt()
                         * s1
-                        / 2.0f64.powf(f64::from(l))
-                        * l.factorial() as f64;
+                        / (2.0f64.powf(f64::from(l)) * l.factorial() as f64);
                 } else {
                     mat[((m + l) as usize, c)] = 0.0;
                 }

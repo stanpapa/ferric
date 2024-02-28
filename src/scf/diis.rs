@@ -57,8 +57,12 @@ impl DIIS {
         let mut b = FMatrix::new_with_value(dim, dim, -1.0);
         b[(self.dim, self.dim)] = 0.0;
         for i in 0..self.dim {
-            for j in 0..self.dim {
-                b[(i, j)] = self.error[i].dot(&self.error[j]);
+            for j in 0..=i {
+                let bij = self.error[i].dot(&self.error[j]);
+                b[(i, j)] = bij;
+                if i != j {
+                    b[(j, i)] = bij;
+                }
             }
         }
 
@@ -74,11 +78,11 @@ impl DIIS {
         }
     }
 
-    // Error = FDS - SDF
+    // Error = [D,F] = SDF - FDS
     fn calc_error_matrix(&self, f: &FMatrix, d: &FMatrix) -> FMatrix {
-        let mut error = f * (d * &self.s);
-        error -= &self.s * (d * f);
+        let mut error = &self.s * (d * f);
+        error -= f * (d * &self.s);
+        // why do I transform this to an orthonormal basis?
         &self.s12 * error * &self.s12
-        // error
     }
 }
