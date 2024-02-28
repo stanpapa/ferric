@@ -62,11 +62,6 @@ impl IntegralInterface {
                             for c in 0..sub.rows {
                                 for d in 0..sub.cols {
                                     tmp[(c + offset_k, d + offset_l)] = sub[(c, d)];
-
-                                    // consider leaving this out
-                                    // if c != d {
-                                    //     tmp[(d + offset_l, c + offset_k)] = sub[(c, d)];
-                                    // }
                                 }
                             }
                         }
@@ -75,8 +70,7 @@ impl IntegralInterface {
             }
         }
 
-        // think about leaving this out
-        // symmetrisation
+        // fill opposite triangle
         for mat in two_electron_integral.values_mut() {
             for c in 0..mat.rows {
                 for d in 0..c {

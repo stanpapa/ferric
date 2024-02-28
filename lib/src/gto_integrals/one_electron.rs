@@ -132,7 +132,6 @@ impl IntegralInterface {
 
         for i in 0..self.basis().shells().len() {
             for j in 0..=i {
-                // for j in 0..self.basis().shells().len() {
                 let one_electron_sub_matrix = self.calc_one_electron_shell_shell(
                     &kernel,
                     &self.basis().shells()[i],
@@ -141,22 +140,16 @@ impl IntegralInterface {
                 let offset_i = self.basis().offset(i);
                 let offset_j = self.basis().offset(j);
 
-                // todo: put into symmetric matrix (make function)
                 for a in 0..one_electron_sub_matrix.rows {
                     for b in 0..one_electron_sub_matrix.cols {
                         one_electron_integral[(a + offset_i, b + offset_j)] =
                             one_electron_sub_matrix[(a, b)];
-                        // if (a != b) {
-                        //     one_electron_integral[(b + offset_j, a + offset_i)] =
-                        //         one_electron_sub_matrix[(a, b)];
-                        // }
                     }
                 }
             }
         }
 
-        // think about leaving this out
-        // symmetrisation
+        // fill opposite triangle
         for i in 0..one_electron_integral.rows {
             for j in 0..i {
                 one_electron_integral[(j, i)] = one_electron_integral[(i, j)];

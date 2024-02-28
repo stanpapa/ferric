@@ -2,8 +2,8 @@ fn boys(n: i16, t: f64) -> f64 {
     let mut f;
 
     // ----------------------------------------------
-    //   Upward recursion for large arguments
-    //   ----------------------------------------------
+    // Upward recursion for large arguments
+    // ----------------------------------------------
     if t > 30.0 {
         let pi_sqrt = 0.88622692545275801365;
         f = pi_sqrt / t.sqrt();
@@ -12,8 +12,8 @@ fn boys(n: i16, t: f64) -> f64 {
         }
     }
     // ----------------------------------------------
-    //   Downward recursion for small arguments
-    //   ----------------------------------------------
+    // Downward recursion for small arguments
+    // ----------------------------------------------
     else {
         let pt5_pm = f64::from(n) + 0.5;
         let mut term = 0.5 / pt5_pm;

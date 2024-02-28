@@ -79,16 +79,16 @@ impl HFSolver for RHFSolver {
 
     fn density(&mut self) {
         let c_occ = self.c.slice(0, self.c.rows - 1, 0, self.homo - 1);
-        self.d = 2.0 * &c_occ * c_occ.transposed();
+        self.d = &c_occ * c_occ.transposed();
     }
 
     fn fock(&mut self, h: &FMatrix, eri: &FMatrixContainer) {
-        self.f = fock(&self.d, h, eri, 1.0, 0.5);
+        self.f = fock(&self.d, h, eri, 2.0, 1.0);
     }
 
     fn energy(&mut self, h: &FMatrix) {
         let x = h + self.f.clone();
-        self.e = 0.5 * self.d.dot(&x) + self.nuclear_repulsion;
+        self.e = self.d.dot(&x) + self.nuclear_repulsion;
     }
 
     fn solve(&mut self, h: &FMatrix, eri: &FMatrixContainer, s: &FMatrix) {
@@ -179,7 +179,7 @@ impl HFSolver for RHFSolver {
         println!("----------------");
         println!("Total SCF Energy");
         println!("----------------\n");
-        let e1 = h.dot(&self.d);
+        let e1 = 2.0 * h.dot(&self.d);
         let e2 = self.e - e1 - self.nuclear_repulsion;
         println!("                          {:^20}  {:^20}", "Hartree", "eV");
         println!(
