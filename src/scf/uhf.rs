@@ -106,6 +106,7 @@ impl HFSolver for UHFSolver {
             .sum::<f64>()
             + self.nuclear_repulsion;
     }
+
     fn solve(&mut self, h: &FMatrix, eri: &FMatrixContainer, s: &FMatrix) {
         // --------------------------------
         // build orthogonalization matrix
@@ -122,14 +123,11 @@ impl HFSolver for UHFSolver {
 
         let mut diis = [
             DIIS::new(self.input.diis_dim_max, self.input.diis_iter_start, s, &s12),
-            DIIS::new(6, 1, s, &s12),
+            DIIS::new(self.input.diis_dim_max, self.input.diis_iter_start, s, &s12),
         ];
         println!(
-            "Iter {:^16} {:^16} {:^16}",
-            "E",
-            "ΔE",
-            "D(rms)" // "Iter {:^16} {:^16} {:^16} {:^16}",
-                     // "E", "ΔE", "[D,F]", "D(rms)"
+            "\nIter {:^16} {:^16} {:^16} {:^4}",
+            "E", "ΔE", "D(rms)", "Damp"
         );
         for iter in 0..self.input.max_iter {
             // --------------------------------
@@ -141,20 +139,29 @@ impl HFSolver for UHFSolver {
             // calculate HF energy
             // --------------------------------
             ΔE = -self.e;
-            self.energy(&h);
+            self.energy(h);
 
             // --------------------------------
             // DIIS for better convergence
             // --------------------------------
-            if iter >= diis[0].iter_start {
-                (0..2).for_each(|op| diis[op].do_diis(&mut self.f[op], &self.d[op]));
-            }
+            (0..2).for_each(|op| diis[op].do_diis(&mut self.f[op], &self.d[op], iter));
 
             // --------------------------------
             // build new density
             // --------------------------------
             let d_old = self.d.clone();
             self.density(&s12);
+
+            // --------------------------------
+            // damp density
+            // --------------------------------
+            // damping causes DIIS convergence issues
+            (0..2).for_each(|op| {
+                if diis[op].damp_factor < 1e-12 {
+                    self.d[op] = (1.0 - diis[op].damp_factor) * self.d[op].clone()
+                        - diis[op].damp_factor * &d_old[op];
+                }
+            });
 
             // --------------------------------
             // check for convergence

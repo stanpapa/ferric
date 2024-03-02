@@ -40,7 +40,9 @@ fn print_banner() {
 fn main() {
     print_banner();
 
+    // --------------------------------------------------
     // read input file
+    // --------------------------------------------------
     let input = FerricInput::new(&mut args());
 
     // --------------------------------------------------
@@ -84,7 +86,7 @@ fn main() {
     let integrals = IntegralInterface::new(&basis, input.geometry.molecule.atoms());
     let _h = integrals.calc_one_electron_integral(OneElectronKernel::Overlap);
     let _s = integrals.calc_one_electron_integral(OneElectronKernel::HCore);
-    let _eri = integrals.calc_two_electron_integral(TwoElectronKernel::ERI); // todo: verify
+    let _eri = integrals.calc_two_electron_integral(TwoElectronKernel::ERI);
 
     // --------------------------------------------------
     // Guess
@@ -97,7 +99,9 @@ fn main() {
     scf::driver::driver(&input.base_name, input.scf)
         .expect("SCF calculation did not finish succesfully");
 
-    // remove all integrals
+    // --------------------------------------------------
+    // clean-up
+    // --------------------------------------------------
     integrals.remove();
     // todo!() remove basis/geometry
 }

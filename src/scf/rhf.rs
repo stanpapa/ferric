@@ -76,16 +76,16 @@ impl HFSolver for RHFSolver {
 
         // Compute density: Dμν = \sum_i^{n_occ} Cμi Cνi^T
         let c_occ = self.c.slice(0, self.c.rows - 1, 0, self.homo - 1);
-        self.d = &c_occ * c_occ.transposed();
+        self.d = 2.0 * &c_occ * c_occ.transposed();
     }
 
     fn fock(&mut self, h: &FMatrix, eri: &FMatrixContainer) {
-        self.f = fock(&self.d, h, eri, 2.0, 1.0);
+        self.f = fock(&self.d, h, eri, 1.0, 0.5);
     }
 
     fn energy(&mut self, h: &FMatrix) {
         let x = h + self.f.clone();
-        self.e = self.d.dot(&x) + self.nuclear_repulsion;
+        self.e = 0.5 * self.d.dot(&x) + self.nuclear_repulsion;
     }
 
     fn solve(&mut self, h: &FMatrix, eri: &FMatrixContainer, s: &FMatrix) {
@@ -101,15 +101,11 @@ impl HFSolver for RHFSolver {
 
         let mut ΔE;
         let mut converged = false;
-        let damp = 0.7;
 
         let mut diis = DIIS::new(self.input.diis_dim_max, self.input.diis_iter_start, s, &s12);
         println!(
-            "\nIter {:^16} {:^16} {:^16}",
-            "E",
-            "ΔE",
-            "D(rms)" // "Iter {:^16} {:^16} {:^16} {:^16}",
-                     // "E", "ΔE", "[D,F]", "D(rms)"
+            "\nIter {:^16} {:^16} {:^16} {:^4}",
+            "E", "ΔE", "D(rms)", "Damp"
         );
         for iter in 0..self.input.max_iter {
             // --------------------------------
@@ -130,9 +126,7 @@ impl HFSolver for RHFSolver {
             // --------------------------------
             // DIIS for better convergence
             // --------------------------------
-            // if iter > 0 {
-            diis.do_diis(&mut self.f, &self.d);
-            // }
+            diis.do_diis(&mut self.f, &self.d, iter);
 
             // --------------------------------
             // build new density
@@ -143,10 +137,9 @@ impl HFSolver for RHFSolver {
             // --------------------------------
             // damp density
             // --------------------------------
-            // damping causes DIIS convergence issues
-            // if iter < 3 {
-            //     self.d = (1.0 - damp) * self.d.clone() - damp * &d_old;
-            // }
+            if diis.damp_factor < 1e-12 {
+                self.d = (1.0 - diis.damp_factor) * self.d.clone() - diis.damp_factor * &d_old;
+            }
 
             // --------------------------------
             // check for convergence
@@ -155,12 +148,8 @@ impl HFSolver for RHFSolver {
 
             let rms = self.d_rms(&d_old);
             println!(
-                "{:3} {:16.9} {:16.5e} {:16.5e}",
-                iter,
-                self.e,
-                ΔE,
-                rms // "{:3} {:16.9} {:16.9} {:16.9} {:16.9}",
-                    // iter, e0, ΔE, comm_norm, rms
+                "{:3} {:16.9} {:16.5e} {:16.5e} {:4.1}",
+                iter, self.e, ΔE, rms, diis.damp_factor
             );
             if ΔE.abs() < self.input.e_threshold && rms < self.input.rms_threshold {
                 converged = true;
@@ -185,7 +174,7 @@ impl HFSolver for RHFSolver {
         println!("----------------");
         println!("Total SCF Energy");
         println!("----------------\n");
-        let e1 = 2.0 * h.dot(&self.d);
+        let e1 = h.dot(&self.d);
         let e2 = self.e - e1 - self.nuclear_repulsion;
         println!("                          {:^20}  {:^20}", "Hartree", "eV");
         println!(

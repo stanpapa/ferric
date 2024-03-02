@@ -13,6 +13,11 @@ pub struct DIIS {
     s: FMatrix,
     s12: FMatrix,
 
+    pub damp_factor: f64,
+    error_max: f64,
+
+    active: bool,
+
     error: Vec<FMatrix>,
     fock: Vec<FMatrix>,
 }
@@ -26,33 +31,57 @@ impl DIIS {
             iter_current: 0,
             s: s.clone(),
             s12: s12.clone(),
+            damp_factor: 0.7,
+            error_max: f64::MAX,
+            active: false,
             error: vec![FMatrix::default(); dim_max],
             fock: vec![FMatrix::default(); dim_max],
         }
     }
 
-    pub fn do_diis(&mut self, f: &mut FMatrix, d: &FMatrix) {
+    pub fn do_diis(&mut self, f: &mut FMatrix, p: &FMatrix, iter: usize) {
         // don't use DIIS if dim = 0
         if self.dim_max == 0 {
             return;
         }
 
-        let pos = self.iter_current % self.dim_max;
-        self.iter_current += 1;
+        // damping becomes counter-productive towards convergence
+        let damp_error = 0.1;
+        if self.active && iter >= self.iter_start && self.error_max < damp_error {
+            self.damp_factor = 0.0;
+        }
 
-        self.fock[pos] = f.clone();
-        self.error[pos] = self.calc_error_matrix(&self.fock[pos], d);
+        // calculate error
+        let error = self.calc_error_matrix(f, p);
 
+        // determine max error
+        self.error_max = *error
+            .iter()
+            .max_by(|a, b| a.abs().total_cmp(&b.abs()))
+            .unwrap();
+
+        // check start of DIIS
+        if !self.active && iter == self.iter_start {
+            self.active = true;
+            println!("{:^60}", "*** Turning on AO-DIIS ***");
+        }
+
+        // in any case store the Fock matrix
         if self.dim < self.dim_max {
             self.dim += 1;
         }
 
-        match self.iter_current.cmp(&self.iter_start) {
-            Ordering::Less => return,
-            Ordering::Equal => println!("{:^60}", "*** Turning on DIIS ***"),
-            _ => (),
-        };
+        // store Fock and error matrix
+        let pos = iter % self.dim_max;
+        self.fock[pos] = f.clone();
+        self.error[pos] = error;
 
+        // don't extrapolate if DIIS hasn't been activated yet
+        if !self.active {
+            return;
+        }
+
+        // form DIIS matrix
         let dim = self.dim + 1;
         let mut b = FMatrix::new_with_value(dim, dim, -1.0);
         b[(self.dim, self.dim)] = 0.0;
@@ -78,12 +107,12 @@ impl DIIS {
         }
     }
 
-    // Error = [D,F] = SDF - FDS
-    fn calc_error_matrix(&self, f: &FMatrix, d: &FMatrix) -> FMatrix {
-        let mut error = &self.s * (d * f);
-        error -= f * (d * &self.s);
+    // Error = [P,F] = FPS - SPF
+    fn calc_error_matrix(&self, f: &FMatrix, p: &FMatrix) -> FMatrix {
+        let mut error = f * (p * &self.s);
+        error -= &self.s * (p * f);
         // why do I transform this to an orthonormal basis?
-        &self.s12 * error * &self.s12
-        // error
+        // &self.s12 * error * &self.s12
+        error
     }
 }

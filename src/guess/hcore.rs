@@ -31,20 +31,26 @@ fn guess_rhf(basename: &str, h: &FMatrix, s12: &FMatrix, nel: &usize) {
 
     // --------------------------------
     // build initial guess density
+    // orthogonalise H
     // --------------------------------
     // core fock matrix: F' = S^{-1/2}^T H S^{-1/2} = S^{-1/2} H S^{-1/2}
     // S-1/2 = symmetric
     let f = s12 * (h * s12);
+    // S^{-1/2}^T H S^{-1/2}
+    let h_ortho = s12 * (h * s12);
 
-    // diagonalize F': C'^T F' C' = eps
-    let (_, cprime) = f.diagonalize_sym();
-    let c = s12 * cprime;
+    // --------------------------------
+    // diagonalize H': C'^T H' C' = eps
+    // --------------------------------
+    let (ev, cprime) = h_ortho.diagonalize_sym();
+    let c = s12 * &cprime;
 
     // --------------------------------
     // Initial density
+    // guess density
     // --------------------------------
     let c_occ = c.slice(0, c.rows - 1, 0, homo - 1);
-    let d = &c_occ * c_occ.transposed();
+    let d = 2.0 * &c_occ * c_occ.transposed();
 
     // --------------------------------
     // Store guess on disk
