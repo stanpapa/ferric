@@ -2,10 +2,10 @@
 mod input;
 
 // submodules
+mod guess;
 mod scf;
 
 use input::FerricInput;
-use scf::input::SCFInput;
 
 use libferric::{
     gto_basis_sets::load_basis_set,
@@ -17,12 +17,20 @@ use std::env::args;
 fn print_banner() {
     println!(
         r#"
- _______  _______ .______      .______       __    ______
-|   ____||   ____||   _  \     |   _  \     |  |  /      |
-|  |__   |  |__   |  |_)  |    |  |_)  |    |  | |  ,----'
-|   __|  |   __|  |      /     |      /     |  | |  |
-|  |     |  |____ |  |\  \----.|  |\  \----.|  | |  `----.
-|__|     |_______|| _| `._____|| _| `._____||__|  \______|"#
+ _____                                    _____ 
+( ___ )----------------------------------( ___ )
+ |   |                                    |   | 
+ |   |                                    |   | 
+ |   |      _____              _          |   | 
+ |   |     |  ___|__ _ __ _ __(_) ___     |   | 
+ |   |     | |_ / _ \ '__| '__| |/ __|    |   | 
+ |   |     |  _|  __/ |  | |  | | (__     |   | 
+ |   |     |_|  \___|_|  |_|  |_|\___|    |   | 
+ |   |                                    |   | 
+ |   |                                    |   | 
+ |___|                                    |___| 
+(_____)----------------------------------(_____)
+"#
     );
 }
 
@@ -56,18 +64,19 @@ fn main() {
     let integrals = IntegralInterface::new(&basis, input.geometry.molecule.atoms());
     integrals.calc_one_electron_integral(OneElectronKernel::Overlap);
     integrals.calc_one_electron_integral(OneElectronKernel::HCore);
-    // integrals.calc_two_electron_integral(TwoElectronKernel::ERI); // todo: verify
 
-    // SCF
-    // create SCFInput
-    let scf_input = SCFInput {
-        hf: input.hf,
-        ..SCFInput::default()
-    };
-    // scf_input.store(&input.base_name);
-    scf::run::run(&input.base_name, scf_input).expect("SCF calculation did not finish succesfully");
+    // --------------------------------------------------
+    // Guess
+    // --------------------------------------------------
+    guess::driver::driver(&input);
+
+    // --------------------------------------------------
+    // SCF Calculation
+    // --------------------------------------------------
+    scf::driver::driver(&input.base_name, input.scf)
+        .expect("SCF calculation did not finish succesfully");
 
     // remove all integrals
     integrals.remove();
-    // remove basis/geometry
+    // todo!() remove basis/geometry
 }

@@ -1,7 +1,7 @@
 mod diis;
+pub mod driver;
 mod fock;
 pub mod input;
 mod rhf;
-pub mod run;
 mod solver;
 mod uhf;

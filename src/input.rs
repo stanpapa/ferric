@@ -1,9 +1,11 @@
-use libferric::geometry::{Geometry, Unit};
-use libferric::gto_basis_sets::BasisSet;
-use libferric::HFType;
-use std::env::Args;
-use std::fs;
-use std::str::FromStr;
+use libferric::{
+    geometry::{Geometry, Unit},
+    gto_basis_sets::BasisSet,
+};
+
+use crate::{guess::Guess, scf::input::SCFInput};
+
+use std::{env::Args, fs, str::FromStr};
 
 use serde_yaml::Value;
 
@@ -11,11 +13,15 @@ use serde_yaml::Value;
 pub struct FerricInput {
     pub base_name: String,
 
-    pub hf: HFType,
+    // Basis
     pub basis_set: BasisSet,
 
     // Geometry
     pub geometry: Geometry,
+
+    // Modules
+    pub guess: Guess,
+    pub scf: SCFInput,
 }
 
 // todo: use Serialize/Deserialize?
@@ -35,7 +41,8 @@ impl FerricInput {
         let inp: Value = serde_yaml::from_str(&contents).unwrap();
         for (key, value) in inp.as_mapping().unwrap() {
             match key.as_str().unwrap().to_lowercase().as_str() {
-                "scf" => ferric_input.parse_scf(value),
+                "guess" => ferric_input.parse_guess(value),
+                "scf" => ferric_input.scf = SCFInput::parse(value),
                 "basis" => ferric_input.parse_basis(value),
                 "geometry" => ferric_input.parse_geometry(value),
                 _ => panic!("Invalid block {:?}", key),
@@ -47,12 +54,10 @@ impl FerricInput {
 }
 
 impl FerricInput {
-    fn parse_scf(&mut self, input: &Value) {
-        for (key, value) in input.as_mapping().unwrap() {
-            match key.as_str().unwrap().to_lowercase().as_str() {
-                "hf" => self.hf = HFType::from_str(value.as_str().unwrap()).unwrap(),
-                _ => panic!("Unknown option: {:?}", key),
-            }
+    fn parse_guess(&mut self, input: &Value) {
+        match input {
+            Value::String(s) => self.guess = Guess::from_str(s).unwrap(),
+            _ => panic!("Invalid guess {:?}", input),
         }
     }
 

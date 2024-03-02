@@ -1,4 +1,7 @@
+use std::str::FromStr;
+
 use libferric::HFType;
+use serde_yaml::Value;
 
 #[derive(Clone)]
 pub struct SCFInput {
@@ -27,8 +30,31 @@ impl Default for SCFInput {
 
             max_iter: 40,
 
-            diis_iter_start: 1,
+            diis_iter_start: 2,
             diis_dim_max: 6,
         }
+    }
+}
+
+impl SCFInput {
+    pub fn parse(input: &Value) -> SCFInput {
+        // initialise SCFInput with default values
+        let mut scf = SCFInput::default();
+
+        // overwrite defaults with input values
+        for (key, value) in input.as_mapping().unwrap() {
+            match key.as_str().unwrap().to_lowercase().as_str() {
+                "hf" => scf.hf = HFType::from_str(value.as_str().unwrap()).unwrap(),
+                "maxiter" => scf.max_iter = value.as_u64().unwrap() as usize,
+                "diisiterstart" => scf.diis_iter_start = value.as_u64().unwrap() as usize,
+                "diisdimmax" => scf.diis_dim_max = value.as_u64().unwrap() as usize,
+                "thresholde" => scf.e_threshold = value.as_f64().unwrap(),
+                "thresholdrms" => scf.rms_threshold = value.as_f64().unwrap(),
+                _ => panic!("Unknown option: {:?}", key),
+            }
+        }
+
+        // return SCFInput
+        scf
     }
 }

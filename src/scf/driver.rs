@@ -13,10 +13,22 @@ use libferric::{
 
 use std::{error, time::Instant};
 
-pub fn run(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::Error>> {
-    println!("=====================================");
-    println!("               SCF");
-    println!("=====================================\n");
+pub fn driver(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::Error>> {
+    println!(
+        r#"
+
+▐▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▌
+▐                          ▌
+▐     ____   ____ _____    ▌
+▐    / ___| / ___|  ___|   ▌
+▐    \___ \| |   | |_      ▌
+▐     ___) | |___|  _|     ▌
+▐    |____/ \____|_|       ▌
+▐                          ▌
+▐                          ▌
+▐▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▌
+"#
+    );
 
     // read data
     let geometry = Geometry::retrieve(basename);
@@ -60,6 +72,7 @@ pub fn run(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::Err
     // read integrals from disk
     let h = FMatrix::retrieve(OneElectronKernel::HCore.to_filename());
     let s = FMatrix::retrieve(OneElectronKernel::Overlap.to_filename());
+    // println!("HCORE\n{}", &h);
 
     // time
     let start_time = Instant::now();

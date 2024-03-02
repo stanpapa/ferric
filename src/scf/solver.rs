@@ -3,10 +3,10 @@ use libferric::linear_algebra::{matrix::FMatrix, matrix_container::FMatrixContai
 pub trait HFSolver {
     fn solve(&mut self, h: &FMatrix, eri: &FMatrixContainer, s: &FMatrix);
 
-    fn guess(&mut self, h: &FMatrix, s12: &FMatrix);
+    fn guess(&mut self);
 
     /// Build density as Dμν = \sum_i^{n_occ} Cμi Cνi^T
-    fn density(&mut self);
+    fn density(&mut self, s12: &FMatrix);
 
     fn fock(&mut self, h: &FMatrix, eri: &FMatrixContainer);
 

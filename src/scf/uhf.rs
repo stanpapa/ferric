@@ -65,30 +65,28 @@ impl UHFSolver {
 }
 
 impl HFSolver for UHFSolver {
-    fn guess(&mut self, h: &FMatrix, s12: &FMatrix) {
-        println!("Guess");
-        (0..2).for_each(|op| {
-            // --------------------------------
-            // build initial guess density
-            // --------------------------------
-            // core fock matrix: F' = S^{-1/2}^T H S^{-1/2} = S^{-1/2} H S^{-1/2}
-            // S-1/2 = symmetric
-            // todo implement FMatrixSym * FMatrix
-            self.f[op] = s12 * (h * s12);
-
-            // diagonalize F': C'^T F' C' = eps
-            let (eps, cprime) = self.f[op].diagonalize_sym();
-            self.eps[op] = eps.clone();
-            self.c[op] = s12 * cprime;
-        });
-        // --------------------------------
-        // Initial density
-        // --------------------------------
-        self.density();
+    fn guess(&mut self) {
+        // todo!() basename!
+        let basename = "input";
+        self.d = [
+            FMatrix::retrieve(&format!("{basename}.p0.tmp")),
+            FMatrix::retrieve(&format!("{basename}.p1.tmp")),
+        ];
     }
 
-    fn density(&mut self) {
-        (0..2).for_each(|op: usize| {
+    fn density(&mut self, s12: &FMatrix) {
+        (0..2).for_each(|op| {
+            // Orthogonalize F' = S-1/2 F S-1/2
+            let f_prime = s12 * &self.f[op] * s12;
+
+            // Diagonalize F' C' -> C' ε
+            let (eps, cprime) = f_prime.diagonalize_sym();
+            self.eps[op] = eps.clone();
+
+            // Backtransform: C = S-1/2 C'
+            self.c[op] = s12 * cprime;
+
+            //  Compute density: Dμν = \sum_i^{n_occ} Cμi Cνi^T
             let c_occ = self.c[op].slice(0, self.c[op].rows - 1, 0, self.homo[op] - 1);
             self.d[op] = &c_occ * c_occ.transposed();
         });
@@ -115,9 +113,9 @@ impl HFSolver for UHFSolver {
         let s12 = s.powf_sym(-0.5);
 
         // --------------------------------
-        // Guess
+        // Load guess
         // --------------------------------
-        self.guess(h, &s12);
+        self.guess();
 
         let mut ΔE;
         let mut converged = false;
@@ -134,9 +132,6 @@ impl HFSolver for UHFSolver {
                      // "E", "ΔE", "[D,F]", "D(rms)"
         );
         for iter in 0..self.input.max_iter {
-            ΔE = -self.e;
-            let d_old = self.d.clone();
-
             // --------------------------------
             // construct new Fock matrix
             // --------------------------------
@@ -145,30 +140,26 @@ impl HFSolver for UHFSolver {
             // --------------------------------
             // calculate HF energy
             // --------------------------------
+            ΔE = -self.e;
             self.energy(&h);
+
+            // --------------------------------
+            // DIIS for better convergence
+            // --------------------------------
+            if iter >= diis[0].iter_start {
+                (0..2).for_each(|op| diis[op].do_diis(&mut self.f[op], &self.d[op]));
+            }
+
+            // --------------------------------
+            // build new density
+            // --------------------------------
+            let d_old = self.d.clone();
+            self.density(&s12);
 
             // --------------------------------
             // check for convergence
             // --------------------------------
             ΔE += self.e;
-
-            // --------------------------------
-            // build new density
-            // --------------------------------
-            // 1. Orthogonalize F' = S-1/2 F S-1/2
-            // 2. Diagonalize F' C' -> C' ε
-            // 3. Backtransform: C = S-1/2 C'
-            // 4. Compute density: Dμν = \sum_i^{n_occ} Cμi Cνi^T
-            if iter >= diis[0].iter_start {
-                (0..2).for_each(|op| diis[op].do_diis(&mut self.f[op], &self.d[op]));
-            }
-            (0..2).for_each(|op| {
-                let f_prime = &s12 * &self.f[op] * &s12;
-                let (eps, cprime) = f_prime.diagonalize_sym();
-                self.eps[op] = eps.clone();
-                self.c[op] = &s12 * cprime;
-            });
-            self.density();
 
             let rms = self.d_rms(&d_old);
             println!(

@@ -56,27 +56,25 @@ impl RHFSolver {
 }
 
 impl HFSolver for RHFSolver {
-    fn guess(&mut self, h: &FMatrix, s12: &FMatrix) {
-        println!("\nGuess: HCORE");
-        // --------------------------------
-        // build initial guess density
-        // --------------------------------
-        // core fock matrix: F' = S^{-1/2}^T H S^{-1/2} = S^{-1/2} H S^{-1/2}
-        // S-1/2 = symmetric
-        self.f = s12 * (h * s12);
-
-        // diagonalize F': C'^T F' C' = eps
-        let (eps, cprime) = self.f.diagonalize_sym();
-        self.eps = eps.clone();
-        self.c = s12 * cprime;
-
-        // --------------------------------
-        // Initial density
-        // --------------------------------
-        self.density();
+    /// Read guess from disk
+    fn guess(&mut self) {
+        // todo!() basename!
+        let basename = "input";
+        self.d = FMatrix::retrieve(&format!("{basename}.p.tmp"));
     }
 
-    fn density(&mut self) {
+    fn density(&mut self, s12: &FMatrix) {
+        // Orthogonalize F' = S-1/2 F S-1/2
+        let f_prime = s12 * &self.f * s12;
+
+        // Diagonalize F' C' -> C' ε
+        let (eps, cprime) = f_prime.diagonalize_sym();
+        self.eps = eps;
+
+        // Backtransform: C = S-1/2 C'
+        self.c = s12 * cprime;
+
+        // Compute density: Dμν = \sum_i^{n_occ} Cμi Cνi^T
         let c_occ = self.c.slice(0, self.c.rows - 1, 0, self.homo - 1);
         self.d = &c_occ * c_occ.transposed();
     }
@@ -99,10 +97,11 @@ impl HFSolver for RHFSolver {
         // --------------------------------
         // Guess
         // --------------------------------
-        self.guess(h, &s12);
+        self.guess();
 
         let mut ΔE;
         let mut converged = false;
+        let damp = 0.7;
 
         let mut diis = DIIS::new(self.input.diis_dim_max, self.input.diis_iter_start, s, &s12);
         println!(
@@ -113,34 +112,41 @@ impl HFSolver for RHFSolver {
                      // "E", "ΔE", "[D,F]", "D(rms)"
         );
         for iter in 0..self.input.max_iter {
-            ΔE = -self.e;
-            let d_old = self.d.clone();
-
             // --------------------------------
             // construct new Fock matrix
             // --------------------------------
             self.fock(h, eri);
 
+            // debug: F AO->MO
+            // let fmo = self.c.transposed() * &self.f * &self.c;
+            // println!("{fmo}");
+
             // --------------------------------
             // calculate HF energy
             // --------------------------------
+            ΔE = -self.e;
             self.energy(h);
+
+            // --------------------------------
+            // DIIS for better convergence
+            // --------------------------------
+            // if iter > 0 {
+            diis.do_diis(&mut self.f, &self.d);
+            // }
 
             // --------------------------------
             // build new density
             // --------------------------------
-            // 1. Orthogonalize F' = S-1/2 F S-1/2
-            // 2. Diagonalize F' C' -> C' ε
-            // 3. Backtransform: C = S-1/2 C'
-            // 4. Compute density: Dμν = \sum_i^{n_occ} Cμi Cνi^T
-            if iter >= diis.iter_start {
-                diis.do_diis(&mut self.f, &self.d);
-            }
-            let f_prime = &s12 * &self.f * &s12;
-            let (eps, cprime) = f_prime.diagonalize_sym();
-            self.eps = eps;
-            self.c = &s12 * cprime;
-            self.density();
+            let d_old = self.d.clone();
+            self.density(&s12);
+
+            // --------------------------------
+            // damp density
+            // --------------------------------
+            // damping causes DIIS convergence issues
+            // if iter < 3 {
+            //     self.d = (1.0 - damp) * self.d.clone() - damp * &d_old;
+            // }
 
             // --------------------------------
             // check for convergence

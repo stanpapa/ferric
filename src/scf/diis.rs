@@ -32,15 +32,13 @@ impl DIIS {
     }
 
     pub fn do_diis(&mut self, f: &mut FMatrix, d: &FMatrix) {
+        // don't use DIIS if dim = 0
+        if self.dim_max == 0 {
+            return;
+        }
+
+        let pos = self.iter_current % self.dim_max;
         self.iter_current += 1;
-
-        match self.iter_current.cmp(&self.iter_start) {
-            Ordering::Less => return,
-            Ordering::Equal => println!("{:^60}", "*** Turning on DIIS ***"),
-            _ => (),
-        };
-
-        let pos = (self.iter_current - self.iter_start) % (self.dim_max);
 
         self.fock[pos] = f.clone();
         self.error[pos] = self.calc_error_matrix(&self.fock[pos], d);
@@ -49,9 +47,11 @@ impl DIIS {
             self.dim += 1;
         }
 
-        if self.iter_current <= self.iter_start {
-            return;
-        }
+        match self.iter_current.cmp(&self.iter_start) {
+            Ordering::Less => return,
+            Ordering::Equal => println!("{:^60}", "*** Turning on DIIS ***"),
+            _ => (),
+        };
 
         let dim = self.dim + 1;
         let mut b = FMatrix::new_with_value(dim, dim, -1.0);
@@ -84,5 +84,6 @@ impl DIIS {
         error -= f * (d * &self.s);
         // why do I transform this to an orthonormal basis?
         &self.s12 * error * &self.s12
+        // error
     }
 }
