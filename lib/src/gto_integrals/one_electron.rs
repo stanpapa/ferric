@@ -7,7 +7,7 @@ use crate::{
     linear_algebra::matrix::FMatrix,
 };
 
-use std::slice::Iter;
+use std::{fmt::Display, slice::Iter, time::Instant};
 
 pub enum OneElectronKernel {
     HCore,
@@ -34,6 +34,19 @@ impl OneElectronKernel {
             OneElectronKernel::Overlap,
         ];
         KERNEL.iter()
+    }
+}
+
+impl Display for OneElectronKernel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OneElectronKernel::HCore => write!(f, "H")?,
+            OneElectronKernel::Kinetic => write!(f, "T")?,
+            OneElectronKernel::NuclearAttraction => write!(f, "V")?,
+            OneElectronKernel::Overlap => write!(f, "S")?,
+        }
+
+        Ok(())
     }
 }
 
@@ -125,7 +138,10 @@ impl IntegralInterface {
         self.cartesian_to_spherical_transformation_1e(a.l(), b.l(), matrix_cartesian)
     }
 
-    pub fn calc_one_electron_integral(&self, kernel: OneElectronKernel) {
+    pub fn calc_one_electron_integral(&self, kernel: OneElectronKernel) -> FMatrix {
+        print!("Calculating one-electron integral: {} ... ", kernel);
+        let t = Instant::now();
+
         let dim = self.basis().dim();
         let mut one_electron_integral = FMatrix::zero(dim, dim);
 
@@ -155,6 +171,9 @@ impl IntegralInterface {
             }
         }
 
+        println!("done ({:?})", t.elapsed());
+
         one_electron_integral.store(kernel.to_filename());
+        one_electron_integral
     }
 }

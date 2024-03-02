@@ -3,7 +3,9 @@ use crate::{
     input::FerricInput,
 };
 
-pub fn driver(input: &FerricInput) {
+use std::error;
+
+pub fn driver(input: &FerricInput) -> Result<(), Box<dyn error::Error>> {
     println!(
         r#"
 ▐▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▌
@@ -18,7 +20,10 @@ pub fn driver(input: &FerricInput) {
 ▐▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▌
 "#
     );
+
     match input.guess {
         Guess::HCore => hcore::guess(&input.base_name, &input.scf.hf, &input.geometry),
     }
+
+    Ok(())
 }

@@ -7,11 +7,11 @@ use libferric::{
         integral_interface::IntegralInterface, one_electron::OneElectronKernel,
         two_electron::TwoElectronKernel,
     },
-    linear_algebra::matrix::FMatrix,
+    linear_algebra::{matrix::FMatrix, matrix_container::FMatrixContainer},
     HFType::{RHF, UHF},
 };
 
-use std::{error, time::Instant};
+use std::error;
 
 pub fn driver(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::Error>> {
     println!(
@@ -33,7 +33,7 @@ pub fn driver(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::
     // read data
     let geometry = Geometry::retrieve(basename);
     let basis = Basis::retrieve(basename);
-    let integrals = IntegralInterface::new(&basis, geometry.molecule.atoms());
+    // let integrals = IntegralInterface::new(&basis, geometry.molecule.atoms());
 
     println!("-------------------------------------");
     println!("             Settings");
@@ -72,12 +72,7 @@ pub fn driver(basename: &str, scf_input: SCFInput) -> Result<(), Box<dyn error::
     // read integrals from disk
     let h = FMatrix::retrieve(OneElectronKernel::HCore.to_filename());
     let s = FMatrix::retrieve(OneElectronKernel::Overlap.to_filename());
-    // println!("HCORE\n{}", &h);
-
-    // time
-    let start_time = Instant::now();
-    let eri = integrals.calc_two_electron_integral(TwoElectronKernel::ERI); // todo: verify
-    println!("Time to calculate ERI: {:?}", start_time.elapsed());
+    let eri = FMatrixContainer::retrieve(TwoElectronKernel::ERI.to_filename());
 
     let mut solver = set_solver(scf_input.clone(), &h, &geometry);
     solver.solve(&h, &eri, &s);

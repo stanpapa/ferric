@@ -4,7 +4,7 @@ use crate::{
     linear_algebra::{matrix::FMatrix, matrix_container::FMatrixContainer},
 };
 
-use std::slice::Iter;
+use std::{fmt::Display, slice::Iter, time::Instant};
 
 pub enum TwoElectronKernel {
     ERI,
@@ -23,8 +23,21 @@ impl TwoElectronKernel {
     }
 }
 
+impl Display for TwoElectronKernel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TwoElectronKernel::ERI => write!(f, "ERI")?,
+        }
+
+        Ok(())
+    }
+}
+
 impl IntegralInterface {
     pub fn calc_two_electron_integral(&self, kernel: TwoElectronKernel) -> FMatrixContainer {
+        print!("Calculating two-electron integral: {} ... ", kernel);
+        let t = Instant::now();
+
         let dim = self.basis().dim();
         let mut two_electron_integral = FMatrixContainer::new();
 
@@ -79,7 +92,9 @@ impl IntegralInterface {
             }
         }
 
-        // two_electron_integral.store(kernel.to_filename());
+        println!("done ({:?})", t.elapsed());
+
+        two_electron_integral.store(kernel.to_filename());
         two_electron_integral
     }
 
