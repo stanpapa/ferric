@@ -1,7 +1,9 @@
 pub mod basis;
+mod def2_svp;
 mod def2_tzvp;
 mod sto_3g;
 
+use def2_svp::load_def2_svp;
 use def2_tzvp::load_def2_tzvp;
 use sto_3g::load_sto_3g;
 
@@ -14,6 +16,7 @@ use std::str::FromStr;
 #[derive(Debug, PartialEq)]
 pub enum BasisSet {
     sto_3g,
+    def2_svp,
     def2_tzvp,
 }
 
@@ -29,6 +32,7 @@ impl Display for BasisSet {
         match self {
             BasisSet::sto_3g => s = "sto-3g",
             BasisSet::def2_tzvp => s = "def2-tzvp",
+            BasisSet::def2_svp => s = "def2-svp",
         }
         write!(f, "{}", s)
     }
@@ -46,6 +50,7 @@ impl FromStr for BasisSet {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let basis = match s.to_lowercase().as_str() {
             "sto-3g" => BasisSet::sto_3g,
+            "def2-svp" => BasisSet::def2_svp,
             "def2-tzvp" => BasisSet::def2_tzvp,
             _ => panic!("Unknown basis set {}", s),
         };
@@ -60,6 +65,7 @@ pub fn load_basis_set(basis_set: &BasisSet, atoms: &[Atom]) -> Basis {
     match basis_set {
         BasisSet::sto_3g => load_sto_3g(atoms),
         BasisSet::def2_tzvp => load_def2_tzvp(atoms),
+        BasisSet::def2_svp => load_def2_svp(atoms),
     }
 }
 
